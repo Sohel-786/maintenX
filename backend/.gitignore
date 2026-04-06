@@ -1,0 +1,21 @@
+# Build folders
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+*.user
+*.suo
+
+# Logs
+*.log
+
+# Next.js static export and publish artifacts copied into wwwroot.
+# We do NOT want to push:
+# - the static frontend build into wwwroot
+# - runtime uploaded/created files under wwwroot/storage
+# Only keep `wwwroot/storage/.gitkeep` (so the folder exists in repo if needed).
+wwwroot/*
+wwwroot/storage/
+!wwwroot/storage/.gitkeep

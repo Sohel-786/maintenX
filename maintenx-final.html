@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MaintenX — Facility Maintenance Portal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Nunito+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy-900:#0a1628;--navy-800:#0f2040;--navy-700:#152a52;--navy-600:#1c3564;
+  --navy-500:#234078;--navy-400:#2d518f;--navy-200:#90a9cc;--navy-50:#eef2f8;
+  --white:#ffffff;--off-white:#f7f9fc;
+  --gold:#c9a84c;--gold-light:#e8c96a;
+  --red:#c0392b;--red-soft:#fdeaea;
+  --green:#1a7a4a;--green-soft:#e5f5ec;
+  --amber:#b45309;--amber-soft:#fef3c7;
+  --blue:#3b82f6;--blue-soft:#e8eef8;
+  --purple:#7c3aed;--purple-soft:#f3e8ff;
+  --text-dark:#0a1628;--text-mid:#3d5278;--text-muted:#7a92b4;
+  --border:#dde4ef;
+  --shadow-sm:0 1px 4px rgba(10,22,40,.08);
+  --shadow-md:0 4px 16px rgba(10,22,40,.12);
+  --shadow-lg:0 12px 40px rgba(10,22,40,.18);
+  --font-head:'Playfair Display',serif;
+  --font-body:'Nunito Sans',sans-serif;
+  --radius:10px;--radius-lg:16px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-body);background:var(--off-white);color:var(--text-dark);min-height:100vh;}
+
+/* ══ LOGIN ══ */
+#screen-login {
+  min-height: 100vh; display: flex; flex-direction: column;
+  position: relative; overflow: hidden;
+  background: linear-gradient(135deg, #0a0f2e 0%, #0d1f5c 35%, #102040 65%, #0a1628 100%);
+}
+#screen-login::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background:
+    radial-gradient(ellipse 800px 600px at 10% 60%, rgba(59,130,246,.25) 0%, transparent 65%),
+    radial-gradient(ellipse 600px 500px at 88% 15%, rgba(245,158,11,.2) 0%, transparent 60%),
+    radial-gradient(ellipse 500px 700px at 65% 90%, rgba(34,197,94,.15) 0%, transparent 60%),
+    radial-gradient(ellipse 400px 400px at 40% 30%, rgba(168,85,247,.12) 0%, transparent 55%);
+  animation: orbs 12s ease-in-out infinite alternate;
+}
+@keyframes orbs {
+  0%   { opacity: 1; }
+  50%  { opacity: .7; }
+  100% { opacity: 1; }
+}
+#screen-login::after {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: repeating-linear-gradient(-55deg, transparent, transparent 60px, rgba(255,255,255,.008) 60px, rgba(255,255,255,.008) 61px);
+}
+
+/* Admin hidden link top-right */
+.admin-link {
+  position: absolute; top: 20px; right: 24px; z-index: 10;
+  font-size: 11px; color: rgba(255,255,255,.25); cursor: pointer;
+  font-family: var(--font-body); font-weight: 600; letter-spacing: .5px;
+  text-transform: uppercase; background: transparent; border: none;
+  transition: color .2s; padding: 6px 10px; border-radius: 6px;
+}
+.admin-link:hover { color: rgba(255,255,255,.55); background: rgba(255,255,255,.05); }
+
+/* Logo area */
+.login-logo-area {
+  position: relative; z-index: 2; text-align: center;
+  padding: 52px 20px 0; flex-shrink: 0;
+}
+.aira-logo {
+  display: inline-flex; align-items: center; gap: 14px;
+  margin-bottom: 10px;
+}
+.aira-logo-icon {
+  width: 58px; height: 58px; border-radius: 16px; flex-shrink: 0;
+  background: linear-gradient(135deg, #f59e0b 0%, #ef4444 50%, #a855f7 100%);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 32px rgba(245,158,11,.4), 0 0 0 1px rgba(255,255,255,.1);
+  position: relative; overflow: hidden;
+}
+.aira-logo-icon::before {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,.2) 0%, transparent 60%);
+}
+.aira-logo-icon span { font-size: 28px; position: relative; z-index: 1; }
+.aira-logo-text { text-align: left; }
+.aira-logo-name {
+  font-family: var(--font-head); font-size: 28px; color: var(--white);
+  letter-spacing: -0.5px; line-height: 1; margin-bottom: 2px;
+}
+.aira-logo-name em { font-style: normal; color: #f59e0b; }
+.aira-logo-tagline { font-size: 11px; color: rgba(255,255,255,.4); letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600; }
+
+/* 3 BIG FULLSCREEN ROLE CARDS */
+.role-cards-full {
+  position: relative; z-index: 2; flex: 1;
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 0; margin: 32px 32px 0;
+  border-radius: 20px; overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,.5);
+  border: 1px solid rgba(255,255,255,.08);
+  min-height: 340px;
+}
+.rc-full {
+  position: relative; display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  padding: 40px 28px; cursor: pointer; overflow: hidden;
+  transition: all .3s ease; border: none; background: transparent;
+}
+.rc-full::before {
+  content: ''; position: absolute; inset: 0;
+  background: var(--rc-bg); opacity: .92; transition: opacity .3s;
+}
+.rc-full::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.06) 0%, transparent 50%);
+}
+.rc-full:not(:last-child) { border-right: 1px solid rgba(255,255,255,.1); }
+.rc-full:hover::before { opacity: 1; }
+.rc-full:hover .rc-full-content { transform: translateY(-6px); }
+.rc-full-content {
+  position: relative; z-index: 1; text-align: center;
+  transition: transform .3s ease;
+  display: flex; flex-direction: column; align-items: center;
+}
+.rc-full-badge {
+  width: 80px; height: 80px; border-radius: 24px; margin-bottom: 22px;
+  display: flex; align-items: center; justify-content: center; font-size: 38px;
+  background: rgba(255,255,255,.15); backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255,255,255,.2);
+  box-shadow: 0 8px 32px rgba(0,0,0,.2), inset 0 1px 0 rgba(255,255,255,.2);
+}
+.rc-full-label {
+  font-family: var(--font-head); font-size: 26px; color: #fff;
+  margin-bottom: 10px; letter-spacing: -.3px;
+}
+.rc-full-desc {
+  font-size: 13px; color: rgba(255,255,255,.65); line-height: 1.6;
+  margin-bottom: 28px; max-width: 200px;
+}
+.rc-full-btn {
+  padding: 12px 32px; border-radius: 50px; border: none; cursor: pointer;
+  font-family: var(--font-body); font-size: 14px; font-weight: 800;
+  color: #fff; letter-spacing: .3px; transition: all .2s;
+  background: rgba(255,255,255,.2); backdrop-filter: blur(10px);
+  border: 1.5px solid rgba(255,255,255,.3);
+  box-shadow: 0 4px 16px rgba(0,0,0,.2);
+}
+.rc-full-btn:hover {
+  background: rgba(255,255,255,.32);
+  transform: scale(1.04);
+  box-shadow: 0 8px 24px rgba(0,0,0,.3);
+}
+
+/* Admin modal overlay for login */
+.admin-modal {
+  display: none; position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,.6); backdrop-filter: blur(6px);
+  align-items: center; justify-content: center;
+}
+.admin-modal.open { display: flex; }
+.admin-modal-box {
+  background: var(--white); border-radius: var(--radius-lg);
+  width: 380px; overflow: hidden; box-shadow: var(--shadow-lg);
+  animation: panelIn .22s ease;
+}
+.admin-modal-head {
+  background: var(--navy-800); padding: 16px 20px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.admin-modal-title { font-family: var(--font-head); font-size: 16px; color: #fff; }
+.admin-modal-body { padding: 24px; }
+.admin-modal-close {
+  background: transparent; border: none; color: rgba(255,255,255,.5);
+  font-size: 18px; cursor: pointer; transition: color .15s;
+}
+.admin-modal-close:hover { color: #fff; }
+
+/* Login form panel (slides below cards) */
+.login-form-panel {
+  position: relative; z-index: 2;
+  width: 100%; max-width: 420px;
+  background: rgba(255,255,255,.97); border-radius: var(--radius-lg);
+  padding: 28px 32px; box-shadow: 0 20px 60px rgba(0,0,0,.4);
+  margin: 20px auto 0; display: none; animation: slideDown .25s ease;
+}
+.login-form-panel.open { display: block; }
+@keyframes slideDown { from { opacity:0; transform:translateY(-12px); } to { opacity:1; transform:translateY(0); } }
+.lfp-head { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
+.lfp-ico { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; flex-shrink:0; }
+.lfp-title { font-family:var(--font-head); font-size:18px; color:var(--navy-900); }
+.lfp-sub { font-size:11px; color:var(--text-muted); }
+.lfp-back { margin-left:auto; background:transparent; border:none; color:var(--text-muted); font-size:20px; cursor:pointer; padding:2px 6px; border-radius:6px; transition:color .15s; }
+.lfp-back:hover { color:var(--navy-700); }
+
+/* Footer */
+.login-footer {
+  position: relative; z-index: 2; text-align: center;
+  padding: 20px; font-size: 11px; color: rgba(255,255,255,.2);
+  letter-spacing: .3px; flex-shrink: 0;
+}
+.login-footer strong { color: rgba(255,255,255,.35); font-weight: 700; }
+
+/* ══ GLOBAL INPUTS ══ */
+label{font-size:11px;font-weight:700;color:var(--text-mid);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:6px;}
+input,select,textarea{width:100%;border:1.5px solid var(--border);border-radius:var(--radius);padding:11px 14px;font-family:var(--font-body);font-size:14px;color:var(--text-dark);background:var(--white);outline:none;transition:border .2s,box-shadow .2s;margin-bottom:16px;}
+input:focus,select:focus,textarea:focus{border-color:var(--navy-500);box-shadow:0 0 0 3px rgba(35,64,120,.1);}
+input[readonly]{background:var(--off-white);color:var(--text-muted);cursor:default;}
+textarea{resize:vertical;min-height:90px;margin-bottom:16px;}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 20px;border-radius:var(--radius);border:none;cursor:pointer;font-family:var(--font-body);font-size:14px;font-weight:700;transition:all .2s;}
+.btn-navy{background:var(--navy-700);color:var(--white);}
+.btn-navy:hover{background:var(--navy-600);box-shadow:var(--shadow-md);}
+.btn-success{background:var(--green);color:var(--white);}
+.btn-success:hover{background:#145f39;}
+.btn-danger{background:var(--red);color:var(--white);}
+.btn-danger:hover{background:#992b22;}
+.btn-amber{background:var(--amber);color:var(--white);}
+.btn-amber:hover{background:#92430a;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text-mid);}
+.btn-outline:hover{border-color:var(--navy-400);color:var(--navy-700);background:var(--navy-50);}
+.btn-ghost{background:transparent;border:1.5px solid rgba(255,255,255,.2);color:#fff;}
+.btn-ghost:hover{background:rgba(255,255,255,.1);}
+.btn-sm{padding:7px 14px;font-size:12px;border-radius:7px;}
+.btn-full{width:100%;padding:13px;font-size:15px;}
+
+/* ══ APP SHELL ══ */
+#app{display:none;min-height:100vh;flex-direction:column;}
+.topbar{height:62px;background:var(--navy-900);display:flex;align-items:center;padding:0 24px;gap:20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 12px rgba(0,0,0,.25);}
+.topbar-logo{display:flex;align-items:center;gap:10px;}
+.topbar-logo-mark{width:32px;height:32px;background:var(--gold);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:15px;}
+.topbar-logo-name{font-family:var(--font-head);font-size:20px;color:var(--white);letter-spacing:-.5px;}
+.topbar-logo-name span{color:var(--gold);}
+.topbar-div{width:1px;height:28px;background:rgba(255,255,255,.12);}
+.topbar-ctx{font-size:12px;color:var(--navy-200);}
+.topbar-ctx strong{color:var(--white);}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+.user-chip{display:flex;align-items:center;gap:10px;padding:5px 14px 5px 6px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:24px;}
+.user-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--white);border:2px solid var(--gold);}
+.user-name{font-size:12px;color:var(--white);font-weight:600;}
+.user-role-tag{font-size:10px;color:var(--navy-200);}
+.logout-btn{background:transparent;border:1px solid rgba(255,255,255,.18);color:var(--navy-200);font-size:12px;padding:6px 14px;border-radius:6px;cursor:pointer;font-family:var(--font-body);transition:all .2s;}
+.logout-btn:hover{border-color:rgba(192,57,43,.6);color:#e87070;}
+.app-body{display:flex;flex:1;}
+.sidebar{width:230px;background:var(--navy-800);display:flex;flex-direction:column;position:sticky;top:62px;height:calc(100vh - 62px);overflow-y:auto;padding:16px 12px;}
+.sidebar-section{font-size:9px;font-weight:700;color:var(--navy-400);text-transform:uppercase;letter-spacing:1.2px;padding:14px 10px 6px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;cursor:pointer;font-size:13px;color:var(--navy-200);transition:all .15s;margin-bottom:2px;border:1px solid transparent;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:var(--white);}
+.nav-item.active{background:rgba(255,255,255,.1);color:var(--white);border-color:rgba(255,255,255,.08);}
+.nav-item.active .nav-icon{color:var(--gold);}
+.nav-icon{font-size:15px;flex-shrink:0;}
+.nav-badge{margin-left:auto;background:var(--gold);color:var(--navy-900);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.sidebar-footer{margin-top:auto;padding:12px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:var(--navy-400);text-align:center;}
+.content{flex:1;padding:28px 32px;overflow-y:auto;}
+
+/* ══ PAGE COMPONENTS ══ */
+.page-header{margin-bottom:24px;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.page-title{font-family:var(--font-head);font-size:24px;color:var(--navy-900);margin-bottom:2px;}
+.page-sub{font-size:13px;color:var(--text-muted);}
+
+/* STAT CARDS */
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:14px;margin-bottom:24px;}
+.stat-card{background:var(--white);border:1.5px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm);cursor:pointer;transition:all .2s;position:relative;overflow:hidden;}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--sc-color,var(--navy-500));}
+.stat-card:hover,.stat-card.active{border-color:var(--sc-color,var(--navy-500));box-shadow:var(--shadow-md);transform:translateY(-2px);}
+.stat-card.active{background:var(--navy-50);}
+.stat-icon{font-size:22px;margin-bottom:10px;}
+.stat-val{font-family:var(--font-head);font-size:32px;color:var(--navy-900);line-height:1;margin-bottom:4px;}
+.stat-lbl{font-size:12px;color:var(--text-muted);font-weight:500;}
+
+/* TABLE */
+.table-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;box-shadow:var(--shadow-sm);margin-bottom:20px;}
+.table-head-row{padding:15px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.table-card-title{font-family:var(--font-head);font-size:15px;color:var(--navy-900);}
+table{width:100%;border-collapse:collapse;}
+th{padding:10px 16px;text-align:left;font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.6px;background:var(--off-white);border-bottom:1px solid var(--border);}
+td{padding:12px 16px;font-size:13px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tr:last-child td{border-bottom:none;}
+tbody tr{transition:background .15s;cursor:pointer;}
+tbody tr:hover{background:var(--navy-50);}
+
+/* BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.badge::before{content:'';width:5px;height:5px;border-radius:50%;}
+.b-open{background:#e8eef8;color:#234078;} .b-open::before{background:#234078;}
+.b-assigned{background:var(--amber-soft);color:var(--amber);} .b-assigned::before{background:var(--amber);}
+.b-accepted{background:#fff0e6;color:#c07a00;} .b-accepted::before{background:#c07a00;}
+.b-inprogress{background:#fff4e6;color:#b85c00;} .b-inprogress::before{background:#b85c00;}
+.b-done{background:var(--green-soft);color:var(--green);} .b-done::before{background:var(--green);}
+.b-closed{background:#f3f4f6;color:#6b7280;} .b-closed::before{background:#6b7280;}
+
+/* FILTER */
+.filter-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;}
+.chip{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--white);color:var(--text-muted);font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;font-family:var(--font-body);}
+.chip:hover{border-color:var(--navy-400);color:var(--navy-700);}
+.chip.active{background:var(--navy-700);border-color:var(--navy-700);color:var(--white);}
+
+/* FORM */
+.form-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:28px;box-shadow:var(--shadow-sm);max-width:680px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.form-group{margin-bottom:16px;}
+
+/* PHOTO UPLOAD */
+.photo-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:22px;text-align:center;cursor:pointer;transition:all .2s;position:relative;background:var(--off-white);}
+.photo-zone:hover{border-color:var(--navy-400);background:var(--navy-50);}
+.photo-zone.has-photo{border-color:var(--green);background:var(--green-soft);}
+.photo-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.photo-preview{max-width:100%;max-height:160px;border-radius:8px;margin-top:10px;object-fit:cover;display:none;}
+
+/* KPI */
+.kpi-section{margin-top:8px;}
+.kpi-title{font-family:var(--font-head);font-size:17px;color:var(--navy-900);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+.kpi-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:18px;box-shadow:var(--shadow-sm);}
+.kpi-val{font-family:var(--font-head);font-size:28px;color:var(--navy-700);line-height:1;margin-bottom:4px;}
+.kpi-val.good{color:var(--green);}
+.kpi-val.warn{color:var(--amber);}
+.kpi-val.bad{color:var(--red);}
+.kpi-lbl{font-size:11px;color:var(--text-muted);font-weight:600;text-transform:uppercase;letter-spacing:.4px;}
+.kpi-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
+.progress-bar{height:5px;background:var(--border);border-radius:3px;overflow:hidden;margin-top:8px;}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--navy-600),var(--navy-400));border-radius:3px;}
+.progress-fill.green{background:linear-gradient(90deg,var(--green),#22c55e);}
+.progress-fill.amber{background:linear-gradient(90deg,var(--amber),#f59e0b);}
+
+/* PANEL */
+.overlay{display:none;position:fixed;inset:0;background:rgba(10,22,40,.5);z-index:200;backdrop-filter:blur(3px);align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.panel{background:var(--white);border-radius:var(--radius-lg);width:620px;max-height:92vh;overflow-y:auto;box-shadow:var(--shadow-lg);animation:panelIn .25s ease;}
+@keyframes panelIn{from{transform:scale(.96) translateY(12px);opacity:0;}to{transform:scale(1) translateY(0);opacity:1;}}
+.panel-top{background:var(--navy-800);padding:22px 24px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;}
+.panel-id{font-size:11px;color:var(--navy-200);font-weight:600;letter-spacing:.5px;margin-bottom:4px;}
+.panel-title{font-family:var(--font-head);font-size:19px;color:var(--white);margin-bottom:10px;line-height:1.3;}
+.panel-body{padding:22px 24px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.info-cell{background:var(--off-white);border-radius:8px;padding:10px 12px;}
+.info-key{font-size:10px;color:var(--text-muted);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px;}
+.info-val{font-size:13px;font-weight:600;color:var(--navy-800);}
+.issue-box{background:var(--off-white);border-left:3px solid var(--navy-500);border-radius:0 8px 8px 0;padding:14px 16px;font-size:13px;line-height:1.65;color:var(--text-mid);margin-bottom:16px;}
+.divider{height:1px;background:var(--border);margin:16px 0;}
+.timeline{display:flex;flex-direction:column;gap:12px;}
+.tl{display:flex;gap:12px;}
+.tl-lw{display:flex;flex-direction:column;align-items:center;}
+.tl-dot{width:10px;height:10px;border-radius:50%;background:var(--navy-600);border:2px solid var(--navy-200);flex-shrink:0;margin-top:3px;}
+.tl-dot.gold{background:var(--gold);border-color:var(--gold-light);}
+.tl-connector{flex:1;width:1px;background:var(--border);margin-top:4px;}
+.tl-event{font-size:13px;font-weight:600;color:var(--navy-800);}
+.tl-time{font-size:11px;color:var(--text-muted);margin-top:2px;}
+.panel-actions{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:10px;flex-wrap:wrap;background:var(--off-white);border-radius:0 0 var(--radius-lg) var(--radius-lg);}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(10,22,40,.6);z-index:300;backdrop-filter:blur(3px);align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.modal{background:var(--white);border-radius:var(--radius-lg);width:500px;box-shadow:var(--shadow-lg);animation:panelIn .2s ease;overflow:hidden;}
+.modal-head{background:var(--navy-800);padding:18px 24px;display:flex;justify-content:space-between;align-items:center;}
+.modal-title{font-family:var(--font-head);font-size:17px;color:var(--white);}
+.modal-body{padding:24px;}
+.modal-foot{padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:10px;justify-content:flex-end;background:var(--off-white);}
+
+/* ADMIN SETUP */
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+.setup-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm);}
+.setup-card-title{font-family:var(--font-head);font-size:15px;color:var(--navy-900);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.setup-item{display:flex;align-items:center;justify-content:space-between;padding:8px 10px;border-radius:7px;font-size:13px;border:1px solid var(--border);margin-bottom:7px;background:var(--off-white);}
+.setup-item-name{font-weight:600;color:var(--navy-700);}
+.setup-item-sub{font-size:11px;color:var(--text-muted);}
+.setup-item-del{background:transparent;border:none;cursor:pointer;color:var(--text-muted);font-size:15px;padding:2px 4px;border-radius:4px;transition:color .15s;}
+.setup-item-del:hover{color:var(--red);}
+.tag{display:inline-block;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:700;background:var(--blue-soft);color:var(--navy-600);}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.admin-card{background:var(--white);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow-sm);margin-bottom:16px;}
+.admin-card-title{font-family:var(--font-head);font-size:15px;color:var(--navy-900);margin-bottom:14px;}
+.lu-badge{font-size:10px;font-weight:700;padding:2px 8px;border-radius:10px;text-transform:uppercase;letter-spacing:.3px;}
+.lb-employee{background:var(--blue-soft);color:var(--navy-600);}
+.lb-coordinator{background:var(--amber-soft);color:var(--amber);}
+.lb-handler{background:var(--green-soft);color:var(--green);}
+.lb-admin{background:var(--purple-soft);color:var(--purple);}
+.empty{text-align:center;padding:40px 24px;}
+.empty-icon{font-size:38px;margin-bottom:10px;opacity:.5;}
+.empty-text{font-size:13px;color:var(--text-muted);}
+
+#toast{position:fixed;bottom:24px;right:24px;z-index:999;background:var(--navy-900);color:var(--white);border-radius:10px;padding:14px 20px 14px 16px;font-size:13px;font-weight:600;box-shadow:var(--shadow-lg);opacity:0;transition:opacity .3s;pointer-events:none;border-left:4px solid var(--green);max-width:320px;}
+#toast.err{border-left-color:var(--red);}
+#toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN ══ -->
+<div id="screen-login">
+
+  <!-- Admin hidden link top-right -->
+  <button class="admin-link" onclick="openAdminModal()">Admin</button>
+
+  <!-- Logo -->
+  <div class="login-logo-area">
+    <div class="aira-logo">
+      <div class="aira-logo-icon"><span>🔩</span></div>
+      <div class="aira-logo-text">
+        <div class="aira-logo-name">Aira <em>Maintenance</em></div>
+        <div class="aira-logo-tagline">Facility Management Portal</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3 Fullscreen Role Cards -->
+  <div class="role-cards-full">
+    <!-- USER -->
+    <div class="rc-full" style="--rc-bg:linear-gradient(145deg,#1a3a8f,#1e4fc2,#2563eb)" onclick="pickRole('employee')">
+      <div class="rc-full-content">
+        <div class="rc-full-badge">👤</div>
+        <div class="rc-full-label">User</div>
+        <div class="rc-full-desc">Raise a complaint and track its real-time status</div>
+        <button class="rc-full-btn">User Login</button>
+      </div>
+    </div>
+    <!-- COORDINATOR -->
+    <div class="rc-full" style="--rc-bg:linear-gradient(145deg,#92400e,#b45309,#d97706)" onclick="pickRole('coordinator')">
+      <div class="rc-full-content">
+        <div class="rc-full-badge">🗂️</div>
+        <div class="rc-full-label">Coordinator</div>
+        <div class="rc-full-desc">Monitor, assign and manage all complaints</div>
+        <button class="rc-full-btn">Coordinator Login</button>
+      </div>
+    </div>
+    <!-- HANDLER -->
+    <div class="rc-full" style="--rc-bg:linear-gradient(145deg,#14532d,#166534,#16a34a)" onclick="pickRole('handler')">
+      <div class="rc-full-content">
+        <div class="rc-full-badge">🔧</div>
+        <div class="rc-full-label">Handler</div>
+        <div class="rc-full-desc">Handle assigned complaints and update progress</div>
+        <button class="rc-full-btn">Handler Login</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Login form (slides in below cards) -->
+  <div class="login-form-panel" id="login-panel">
+    <div class="lfp-head">
+      <div class="lfp-ico" id="lfp-ico">👤</div>
+      <div><div class="lfp-title" id="lfp-title">Login</div><div class="lfp-sub">Enter your credentials to continue</div></div>
+      <button class="lfp-back" onclick="hideForm()">←</button>
+    </div>
+    <div class="form-group"><label>Email / Username</label><input type="text" id="l-email" placeholder="Enter your email"></div>
+    <div class="form-group"><label>Password</label><input type="password" id="l-pass" placeholder="Enter your password" value="••••••••"></div>
+    <button class="btn btn-full" id="lfp-btn" onclick="doLogin()">Sign In →</button>
+    <div style="margin-top:10px;font-size:11px;color:var(--text-muted);text-align:center">Demo mode — click Sign In to enter</div>
+  </div>
+
+  <!-- Footer -->
+  <div class="login-footer">Solution by <strong>LOGIC WAVE</strong> &nbsp;|&nbsp; © 2026 All Rights Reserved</div>
+</div>
+
+<!-- Admin login modal (hidden, accessible via top-right link) -->
+<div class="admin-modal" id="admin-modal" onclick="closeAdminModalBg(event)">
+  <div class="admin-modal-box">
+    <div class="admin-modal-head">
+      <div class="admin-modal-title">🛡️ Admin Access</div>
+      <button class="admin-modal-close" onclick="closeAdminModal()">✕</button>
+    </div>
+    <div class="admin-modal-body">
+      <div class="form-group"><label>Email</label><input type="text" id="adm-email" value="rajesh.patel@aira.com"></div>
+      <div class="form-group"><label>Password</label><input type="password" id="adm-pass" value="••••••••"></div>
+      <button class="btn btn-navy btn-full" onclick="doAdminLogin()">Sign In as Admin →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ APP ══ -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-logo">
+      <div class="topbar-logo-mark" style="background:linear-gradient(135deg,#f59e0b,#ef4444);font-size:14px">🔩</div>
+      <div class="topbar-logo-name">Aira <span>Maintenance</span></div>
+    </div>
+    <div class="topbar-div"></div>
+    <div class="topbar-ctx" id="ctx-co"></div>
+    <div class="topbar-div"></div>
+    <div class="topbar-ctx" id="ctx-loc"></div>
+    <div class="topbar-right">
+      <div class="user-chip">
+        <div class="user-avatar" id="h-av">U</div>
+        <div><div class="user-name" id="h-name">—</div><div class="user-role-tag" id="h-role">—</div></div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Sign Out</button>
+    </div>
+  </div>
+  <div class="app-body">
+    <nav class="sidebar" id="sidebar"></nav>
+    <main class="content" id="content"></main>
+  </div>
+</div>
+
+<!-- TICKET PANEL -->
+<div class="overlay" id="overlay" onclick="closePanelBg(event)">
+  <div class="panel" id="panel"></div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal-overlay" onclick="closeModalBg(event)">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// MASTER DATA
+// ══════════════════════════════════════════
+const DB = {
+  companies: [
+    'Aira Euro Automation Pvt. Ltd.',
+    'Airmax Pneumatics Ltd.',
+    'Suzhik Flow Control',
+    'Cair Euro Automation Pvt. Ltd.',
+  ],
+  locations: {
+    'Aira Euro Automation Pvt. Ltd.': ['Aira HO','Aira KPM','Aira Unit - 3'],
+    'Airmax Pneumatics Ltd.':         ['Airmax'],
+    'Suzhik Flow Control':            ['Suzhik'],
+    'Cair Euro Automation Pvt. Ltd.': ['Cair Estate'],
+  },
+  departments: ['Production','Store','Inward','Gate','QC','CNC','Purchase','IT','Admin'],
+  categories: [
+    'Machinery - Electrical',
+    'Machinery - Mechanical',
+    'Machinery - Maintenance',
+    'Aira Pipe Fitting',
+    'Plumbing Work',
+    'Aira Compressor',
+    'Light + Fan + Switch Board',
+    'Lift',
+    'Camera + Net',
+    'Auto Bit - API',
+    'IT Work',
+    'Machine AMC',
+  ],
+  users: [
+    // Admin
+    {id:'u1', name:'Rajesh Patel',      initials:'RP', role:'admin',       company:'Aira Euro Automation Pvt. Ltd.', location:'Aira HO',       department:'Admin',      email:'rajesh.patel@aira.com',       active:true},
+    // Coordinators
+    {id:'u2', name:'Sanjay Mehta',      initials:'SM', role:'coordinator', company:'Aira Euro Automation Pvt. Ltd.', location:'Aira HO',       department:'Maintenance', email:'sanjay.mehta@aira.com',       active:true},
+    {id:'u3', name:'Dinesh Shah',       initials:'DS', role:'coordinator', company:'Airmax Pneumatics Ltd.',         location:'Airmax',         department:'Admin',      email:'dinesh.shah@airmax.com',       active:true},
+    // Employees - Aira Euro
+    {id:'u4', name:'Kiran Desai',       initials:'KD', role:'employee',    company:'Aira Euro Automation Pvt. Ltd.', location:'Aira HO',       department:'Production', email:'kiran.desai@aira.com',         active:true},
+    {id:'u5', name:'Pooja Sharma',      initials:'PS', role:'employee',    company:'Aira Euro Automation Pvt. Ltd.', location:'Aira KPM',      department:'Store',      email:'pooja.sharma@aira.com',        active:true},
+    {id:'u6', name:'Nilesh Joshi',      initials:'NJ', role:'employee',    company:'Aira Euro Automation Pvt. Ltd.', location:'Aira Unit - 3', department:'Inward',     email:'nilesh.joshi@aira.com',        active:true},
+    {id:'u7', name:'Bhavesh Trivedi',   initials:'BT', role:'employee',    company:'Aira Euro Automation Pvt. Ltd.', location:'Aira HO',       department:'QC',         email:'bhavesh.trivedi@aira.com',     active:true},
+    // Employees - Other companies
+    {id:'u8', name:'Mansi Patel',       initials:'MP', role:'employee',    company:'Airmax Pneumatics Ltd.',         location:'Airmax',         department:'Production', email:'mansi.patel@airmax.com',       active:true},
+    {id:'u9', name:'Harsh Solanki',     initials:'HS', role:'employee',    company:'Suzhik Flow Control',            location:'Suzhik',         department:'CNC',        email:'harsh.solanki@suzhik.com',     active:true},
+    {id:'u10',name:'Riya Kapoor',       initials:'RK', role:'employee',    company:'Cair Euro Automation Pvt. Ltd.', location:'Cair Estate',   department:'IT',         email:'riya.kapoor@cair.com',         active:true},
+    // Handlers - Aira Euro
+    {id:'u11',name:'Mahesh Chauhan',    initials:'MC', role:'handler',     company:'Aira Euro Automation Pvt. Ltd.', location:'Aira HO',       department:'Maintenance', email:'mahesh.chauhan@aira.com',     active:true},
+    {id:'u12',name:'Dipak Rathod',      initials:'DR', role:'handler',     company:'Aira Euro Automation Pvt. Ltd.', location:'Aira KPM',      department:'Maintenance', email:'dipak.rathod@aira.com',       active:true},
+    {id:'u13',name:'Suresh Vora',       initials:'SV', role:'handler',     company:'Aira Euro Automation Pvt. Ltd.', location:'Aira Unit - 3', department:'Maintenance', email:'suresh.vora@aira.com',        active:true},
+    // Handlers - Other companies
+    {id:'u14',name:'Prakash Nayak',     initials:'PN', role:'handler',     company:'Airmax Pneumatics Ltd.',         location:'Airmax',         department:'Maintenance', email:'prakash.nayak@airmax.com',    active:true},
+    {id:'u15',name:'Vishal Makwana',    initials:'VM', role:'handler',     company:'Suzhik Flow Control',            location:'Suzhik',         department:'Maintenance', email:'vishal.makwana@suzhik.com',   active:true},
+    {id:'u16',name:'Amit Parmar',       initials:'AP', role:'handler',     company:'Cair Euro Automation Pvt. Ltd.', location:'Cair Estate',   department:'Maintenance', email:'amit.parmar@cair.com',        active:true},
+  ],
+  tickets: [
+    {id:'TKT-001',category:'Machinery - Electrical',status:'closed',company:'Aira Euro Automation Pvt. Ltd.',location:'Aira HO',department:'Production',reporter:'Kiran Desai',reporterId:'u4',assignee:'Mahesh Chauhan',assigneeId:'u11',created:'15-Jan-2025',updated:'17-Jan-2025',issue:'Production line motor tripping frequently. Machine stops mid-cycle causing production loss.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Kiran Desai',d:'Jan 15, 09:30'},{t:'Assigned to Mahesh Chauhan by Sanjay Mehta',d:'Jan 15, 10:00'},{t:'Mahesh Chauhan accepted the task',d:'Jan 15, 10:20'},{t:'Work started – motor inspection',d:'Jan 15, 11:00'},{t:'Work completed with photo evidence',d:'Jan 15, 16:30'},{t:'Ticket closed by Sanjay Mehta',d:'Jan 16, 09:00'}]},
+    {id:'TKT-002',category:'Plumbing Work',status:'inprogress',company:'Aira Euro Automation Pvt. Ltd.',location:'Aira KPM',department:'Store',reporter:'Pooja Sharma',reporterId:'u5',assignee:'Dipak Rathod',assigneeId:'u12',created:'20-Jan-2025',updated:'20-Jan-2025',issue:'Water leakage near store entry gate. Floor getting wet causing slip hazard for material handling staff.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Pooja Sharma',d:'Jan 20, 10:00'},{t:'Assigned to Dipak Rathod by Sanjay Mehta',d:'Jan 20, 10:30'},{t:'Dipak Rathod accepted the task',d:'Jan 20, 10:45'},{t:'Work started – pipe inspection',d:'Jan 20, 11:30'}]},
+    {id:'TKT-003',category:'Light + Fan + Switch Board',status:'assigned',company:'Aira Euro Automation Pvt. Ltd.',location:'Aira Unit - 3',department:'Inward',reporter:'Nilesh Joshi',reporterId:'u6',assignee:'Suresh Vora',assigneeId:'u13',created:'21-Jan-2025',updated:'21-Jan-2025',issue:'3 tube lights not working in inward area. Visibility poor for material checking during night shift.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Nilesh Joshi',d:'Jan 21, 08:00'},{t:'Assigned to Suresh Vora by Sanjay Mehta',d:'Jan 21, 09:00'}]},
+    {id:'TKT-004',category:'Camera + Net',status:'open',company:'Airmax Pneumatics Ltd.',location:'Airmax',department:'Gate',reporter:'Mansi Patel',reporterId:'u8',assignee:null,assigneeId:null,created:'22-Jan-2025',updated:'22-Jan-2025',issue:'Gate entry camera not recording. Blind spot at main entry. Security concern for vehicle movement.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Mansi Patel',d:'Jan 22, 07:30'}]},
+    {id:'TKT-005',category:'Machine AMC',status:'open',company:'Suzhik Flow Control',location:'Suzhik',department:'CNC',reporter:'Harsh Solanki',reporterId:'u9',assignee:null,assigneeId:null,created:'22-Jan-2025',updated:'22-Jan-2025',issue:'CNC machine annual maintenance due this month. Vendor visit needs to be scheduled before end of month.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Harsh Solanki',d:'Jan 22, 09:00'}]},
+    {id:'TKT-006',category:'IT Work',status:'done',company:'Cair Euro Automation Pvt. Ltd.',location:'Cair Estate',department:'IT',reporter:'Riya Kapoor',reporterId:'u10',assignee:'Amit Parmar',assigneeId:'u16',created:'18-Jan-2025',updated:'21-Jan-2025',issue:'Office network switch not working. 12 systems unable to connect to internet and internal server.',photo:null,completionPhoto:'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48cmVjdCB3aWR0aD0iNDAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2U1ZjVlYyIvPjx0ZXh0IHg9IjUwJSIgeT0iNDUlIiBkb21pbmFudC1iYXNlbGluZT0ibWlkZGxlIiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjE0IiBmaWxsPSIjMWE3YTRhIj5OZXR3b3JrIFN3aXRjaCBSZXBsYWNlZDwvdGV4dD48dGV4dCB4PSI1MCUiIHk9IjYwJSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1zaXplPSIxMiIgZmlsbD0iIzFhN2E0YSI+Q29tcGxldGlvbiBQaG90bzwvdGV4dD48L3N2Zz4=',timeline:[{t:'Ticket raised by Riya Kapoor',d:'Jan 18, 11:00'},{t:'Assigned to Amit Parmar',d:'Jan 18, 11:30'},{t:'Amit Parmar accepted',d:'Jan 18, 11:45'},{t:'Work started – switch diagnosis',d:'Jan 18, 14:00'},{t:'Work completed with photo evidence',d:'Jan 21, 16:00'}]},
+    {id:'TKT-007',category:'Aira Compressor',status:'open',company:'Aira Euro Automation Pvt. Ltd.',location:'Aira HO',department:'Production',reporter:'Kiran Desai',reporterId:'u4',assignee:null,assigneeId:null,created:'23-Jan-2025',updated:'23-Jan-2025',issue:'Main air compressor pressure dropping below 6 bar during peak hours. Affecting pneumatic tools.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Kiran Desai',d:'Jan 23, 08:00'}]},
+    {id:'TKT-008',category:'Aira Pipe Fitting',status:'assigned',company:'Aira Euro Automation Pvt. Ltd.',location:'Aira HO',department:'QC',reporter:'Bhavesh Trivedi',reporterId:'u7',assignee:'Mahesh Chauhan',assigneeId:'u11',created:'23-Jan-2025',updated:'23-Jan-2025',issue:'Air pipe fitting loose near QC inspection table. Air leakage causing pressure loss and noise.',photo:null,completionPhoto:null,timeline:[{t:'Ticket raised by Bhavesh Trivedi',d:'Jan 23, 09:30'},{t:'Assigned to Mahesh Chauhan by Sanjay Mehta',d:'Jan 23, 10:00'}]},
+  ],
+  nextId:9,
+};
+
+// ══════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════
+const ST = {role:'employee',userId:'u3',filter:'all',currentPage:'dashboard'};
+let uploadedPhoto=null, uploadedCompletionPhoto=null;
+
+// ══════════════════════════════════════════
+// LOGIN
+// ══════════════════════════════════════════
+const ROLE_META = {
+  employee:    {label:'User Login',        icon:'👤', bg:'rgba(37,99,235,.12)',  color:'#2563eb'},
+  coordinator: {label:'Coordinator Login', icon:'🗂️', bg:'rgba(217,119,6,.12)',  color:'#d97706'},
+  handler:     {label:'Handler Login',     icon:'🔧', bg:'rgba(22,163,74,.12)',  color:'#16a34a'},
+  admin:       {label:'Admin Login',       icon:'🛡️', bg:'rgba(168,85,247,.12)', color:'#a855f7'},
+};
+const DEMO_EMAILS = {employee:'kiran.desai@aira.com',coordinator:'sanjay.mehta@aira.com',handler:'mahesh.chauhan@aira.com',admin:'rajesh.patel@aira.com'};
+
+function pickRole(role) {
+  ST.role = role;
+  const m = ROLE_META[role];
+  const ico = document.getElementById('lfp-ico');
+  ico.textContent = m.icon; ico.style.background = m.bg;
+  document.getElementById('lfp-title').textContent = m.label;
+  const btn = document.getElementById('lfp-btn');
+  btn.style.background = m.color; btn.style.color = '#fff';
+  document.getElementById('l-email').value = DEMO_EMAILS[role];
+  const panel = document.getElementById('login-panel');
+  panel.classList.add('open');
+  panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function hideForm() {
+  document.getElementById('login-panel').classList.remove('open');
+}
+
+function openAdminModal() {
+  document.getElementById('admin-modal').classList.add('open');
+}
+function closeAdminModal() {
+  document.getElementById('admin-modal').classList.remove('open');
+}
+function closeAdminModalBg(e) {
+  if (e.target === document.getElementById('admin-modal')) closeAdminModal();
+}
+function doAdminLogin() {
+  ST.role = 'admin';
+  ST.userId = 'u1';
+  closeAdminModal();
+  enterApp();
+}
+
+function doLogin() {
+  const u = DB.users.find(x=>x.role===ST.role&&x.active);
+  if (!u) { toast('No active user for this role','err'); return; }
+  ST.userId = u.id;
+  enterApp();
+}
+
+function enterApp() {
+  const u = DB.users.find(x=>x.id===ST.userId);
+  document.getElementById('h-av').textContent = u.initials;
+  document.getElementById('h-av').style.cssText = avatarStyle(u.role);
+  document.getElementById('h-name').textContent = u.name;
+  document.getElementById('h-role').textContent = roleLabel(u.role);
+  document.getElementById('ctx-co').innerHTML = ST.role === 'admin' ? `🛡️ <strong>System Administrator</strong>` : `🏢 <strong>${u.company}</strong>`;
+  document.getElementById('ctx-loc').innerHTML = ST.role === 'admin' ? `⚙️ <strong>Master Data Control</strong>` : `📍 <strong>${u.location}</strong>`;
+  document.getElementById('screen-login').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  navigate(ST.role === 'admin' ? 'users' : 'dashboard');
+}
+
+function logout() {
+  document.getElementById('screen-login').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-panel').classList.remove('open');
+  ST.filter = 'all';
+}
+
+// ══════════════════════════════════════════
+// SIDEBAR
+// ══════════════════════════════════════════
+const MENUS = {
+  employee:    [{icon:'📊',label:'Dashboard',page:'dashboard'},{icon:'🎫',label:'My Tickets',page:'my-tickets'},{icon:'➕',label:'Raise Ticket',page:'raise-ticket'}],
+  coordinator: [{icon:'📊',label:'Dashboard',page:'dashboard'},{icon:'📋',label:'All Tickets',page:'all-tickets'},{icon:'📌',label:'Assign Work',page:'assign-work'},{icon:'✅',label:'Close Tickets',page:'close-tickets'}],
+  handler:     [{icon:'📊',label:'Dashboard',page:'dashboard'},{icon:'🔨',label:'My Work Queue',page:'my-work'}],
+  admin:       [{icon:'👥',label:'User Master',page:'users'},{icon:'🏢',label:'Master Data',page:'setup'}],
+};
+
+function buildSidebar() {
+  const menus = MENUS[ST.role]||[];
+  const openCount = DB.tickets.filter(t=>t.status==='open').length;
+  const doneCount = DB.tickets.filter(t=>t.status==='done').length;
+  document.getElementById('sidebar').innerHTML = `
+    <div class="sidebar-section">Navigation</div>
+    ${menus.map(m=>`
+      <div class="nav-item ${ST.currentPage===m.page?'active':''}" onclick="navigate('${m.page}')">
+        <span class="nav-icon">${m.icon}</span>${m.label}
+        ${m.page==='assign-work'&&openCount?`<span class="nav-badge">${openCount}</span>`:''}
+        ${m.page==='close-tickets'&&doneCount?`<span class="nav-badge">${doneCount}</span>`:''}
+      </div>`).join('')}
+    <div class="sidebar-footer">Aira Maintenance v3.0</div>`;
+}
+
+// ══════════════════════════════════════════
+// NAVIGATE
+// ══════════════════════════════════════════
+function navigate(page) {
+  ST.currentPage=page;
+  ST.filter='all'; // always reset filter on page change
+  uploadedPhoto=null; uploadedCompletionPhoto=null;
+  buildSidebar();
+  const PAGES = {
+    dashboard, 'my-tickets':myTickets, 'raise-ticket':raiseTicket,
+    'all-tickets':allTickets, 'assign-work':assignWork,
+    'close-tickets':closeTickets, 'my-work':myWork,
+    users:adminUsers, setup:adminSetup,
+  };
+  document.getElementById('content').innerHTML = (PAGES[page]||dashboard)();
+  if (page==='raise-ticket') wireRaiseTicket();
+}
+
+// ══════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════
+function dashboard() {
+  const u = curUser();
+  const mine = myData();
+  const cnt = countBy(mine,'status');
+  const total = mine.length;
+
+  const inProgressCount = (cnt.assigned||0)+(cnt.accepted||0)+(cnt.inprogress||0);
+  const completedCount  = (cnt.done||0)+(cnt.closed||0);
+
+  const statCards = [
+    {label:'Total Tickets', val:total,            icon:'🎫', color:'var(--navy-500)', filter:'all'},
+    {label:'Open',          val:cnt.open||0,       icon:'🔵', color:'var(--blue)',     filter:'open'},
+    {label:'In Progress',   val:inProgressCount,   icon:'⚡', color:'var(--amber)',    filter:'inprogress'},
+    {label:'Completed',     val:completedCount,    icon:'✅', color:'var(--green)',    filter:'done'},
+  ];
+
+  // Only show table when a specific filter card is clicked (not on initial load)
+  const hasFilter = ST.filter !== 'all';
+  const filtered = ST.filter==='inprogress'
+    ? mine.filter(t=>['assigned','accepted','inprogress'].includes(t.status))
+    : ST.filter==='done'
+    ? mine.filter(t=>['done','closed'].includes(t.status))
+    : mine.filter(t=>t.status===ST.filter);
+
+  const tableTitle = {
+    open:'Open Tickets',
+    inprogress:'In Progress Tickets',
+    done:'Completed Tickets',
+    closed:'Closed Tickets',
+    all:'All Tickets',
+  }[ST.filter] || 'Tickets';
+
+  return `
+  <div class="page-header">
+    <div><div class="page-title">Dashboard</div><div class="page-sub">Welcome back, ${u.name.split(' ')[0]} 👋 — click any card to view tickets</div></div>
+    ${ST.role==='employee'?`<button class="btn btn-navy" onclick="navigate('raise-ticket')">+ Raise Ticket</button>`:''}
+  </div>
+  <div class="stat-grid">
+    ${statCards.map(s=>`
+      <div class="stat-card ${ST.filter===s.filter&&hasFilter?'active':''}" style="--sc-color:${s.color}" onclick="dashFilter('${s.filter}')">
+        <div class="stat-icon">${s.icon}</div>
+        <div class="stat-val">${s.val}</div>
+        <div class="stat-lbl">${s.label}</div>
+      </div>`).join('')}
+  </div>
+
+  ${hasFilter ? `
+  <div class="table-card" style="margin-bottom:24px">
+    <div class="table-head-row">
+      <div class="table-card-title">${tableTitle} <span style="font-size:13px;color:var(--text-muted);font-family:var(--font-body);font-weight:400">(${filtered.length} record${filtered.length!==1?'s':''})</span></div>
+      <button class="btn btn-outline btn-sm" onclick="dashFilter('all')">✕ Clear Filter</button>
+    </div>
+    ${filtered.length>0 ? renderTable(filtered, ST.role!=='employee') : '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No tickets in this category</div></div>'}
+  </div>` : `
+  <div style="background:var(--navy-50);border:1px dashed var(--border);border-radius:var(--radius-lg);padding:28px;text-align:center;margin-bottom:24px;color:var(--text-muted);font-size:13px;">
+    👆 Click any card above to view tickets for that status
+  </div>`}
+
+  ${kpiSection(u, mine)}`;
+}
+
+function dashFilter(f) {
+  ST.filter = f;
+  // Re-render just the content without full navigate to preserve filter
+  document.getElementById('content').innerHTML = dashboard();
+}
+
+// ══════════════════════════════════════════
+// KPI SECTION
+// ══════════════════════════════════════════
+function kpiSection(u, mine) {
+  const role = ST.role;
+  if (role === 'admin') return ''; // Admin has no KPI — backend only
+  let cards = [];
+
+  if (role==='employee') {
+    const total = mine.length;
+    const closed = mine.filter(t=>t.status==='closed').length;
+    const reopened = mine.filter(t=>t.timeline.some(e=>e.t.toLowerCase().includes('reopen'))).length;
+    const avgRes = avgResolutionDays(mine.filter(t=>t.status==='closed'));
+    cards = [
+      {val:total,             lbl:'Total Raised',       sub:'All time',                  cls:''},
+      {val:closed,            lbl:'Resolved',            sub:`${pct(closed,total)}% resolution rate`, cls:'good'},
+      {val:mine.filter(t=>['open','assigned','accepted','inprogress'].includes(t.status)).length, lbl:'Pending', sub:'Awaiting resolution', cls:'warn'},
+      {val:reopened,          lbl:'Reopened Tickets',   sub:'Quality indicator',          cls: reopened>0?'bad':'good'},
+      {val:avgRes,            lbl:'Avg Resolution',     sub:'Days to close',              cls:''},
+    ];
+  } else if (role==='coordinator') {
+    const all = DB.tickets;
+    const assigned = all.filter(t=>t.timeline.some(e=>e.t.toLowerCase().includes('assigned'))).length;
+    const closed = all.filter(t=>t.status==='closed').length;
+    const reopened = all.filter(t=>t.timeline.some(e=>e.t.toLowerCase().includes('reopen'))).length;
+    const reassigned = all.filter(t=>t.timeline.filter(e=>e.t.toLowerCase().includes('reassigned')).length>0).length;
+    const pendingClose = all.filter(t=>t.status==='done').length;
+    cards = [
+      {val:all.length,       lbl:'Total Tickets',        sub:'System wide',                cls:''},
+      {val:assigned,         lbl:'Tickets Assigned',     sub:'By coordinator',             cls:''},
+      {val:closed,           lbl:'Tickets Closed',       sub:`${pct(closed,all.length)}% close rate`, cls:'good'},
+      {val:pendingClose,     lbl:'Pending Closure',      sub:'Done, not yet closed',       cls: pendingClose>0?'warn':'good'},
+      {val:reopened,         lbl:'Reopened',             sub:'Sent back to handler',       cls: reopened>0?'warn':'good'},
+      {val:reassigned,       lbl:'Reassigned',           sub:'Handler changed',            cls:''},
+    ];
+  } else if (role==='handler') {
+    const myTickets = DB.tickets.filter(t=>t.assigneeId===u.id);
+    const done = myTickets.filter(t=>['done','closed'].includes(t.status)).length;
+    const reopened = myTickets.filter(t=>t.timeline.some(e=>e.t.toLowerCase().includes('reopen'))).length;
+    const inprog = myTickets.filter(t=>t.status==='inprogress').length;
+    cards = [
+      {val:myTickets.length, lbl:'Assigned to Me',      sub:'All time',                   cls:''},
+      {val:done,             lbl:'Completed',            sub:`${pct(done,myTickets.length)}% completion rate`, cls:'good'},
+      {val:inprog,           lbl:'Currently Active',    sub:'In progress now',             cls: inprog>0?'warn':''},
+      {val:reopened,         lbl:'Reopened',            sub:'Quality flag',                cls: reopened>0?'bad':'good'},
+      {val:myTickets.filter(t=>t.status==='assigned').length, lbl:'Pending Accept', sub:'Awaiting your action', cls: myTickets.filter(t=>t.status==='assigned').length>0?'warn':'good'},
+    ];
+  } else if (role==='admin') {
+    const all = DB.tickets;
+    const handlers = DB.users.filter(u=>u.role==='handler'&&u.active);
+    const closed = all.filter(t=>t.status==='closed').length;
+    cards = [
+      {val:all.length,               lbl:'Total Tickets',    sub:'All companies',   cls:''},
+      {val:DB.users.filter(u=>u.active).length, lbl:'Active Users', sub:'All roles', cls:''},
+      {val:closed,                   lbl:'Resolved',          sub:`${pct(closed,all.length)}% rate`, cls:'good'},
+      {val:all.filter(t=>t.status==='open').length, lbl:'Unassigned', sub:'Need attention', cls: all.filter(t=>t.status==='open').length>0?'warn':'good'},
+      {val:handlers.length,          lbl:'Active Handlers',  sub:'Available',       cls:''},
+    ];
+  }
+
+  // Handler performance table for coordinator only
+  const handlerPerf = role==='coordinator' ? handlerPerfTable() : '';
+
+  return `
+  <div class="kpi-section">
+    <div class="kpi-title">📊 KPI Overview — All Time</div>
+    <div class="kpi-grid">
+      ${cards.map(c=>`
+        <div class="kpi-card">
+          <div class="kpi-val ${c.cls}">${c.val}</div>
+          <div class="kpi-lbl">${c.lbl}</div>
+          <div class="kpi-sub">${c.sub}</div>
+        </div>`).join('')}
+    </div>
+    ${handlerPerf}
+  </div>`;
+}
+
+function handlerPerfTable() {
+  const handlers = DB.users.filter(u=>u.role==='handler'&&u.active);
+  if (!handlers.length) return '';
+  return `
+  <div class="admin-card">
+    <div class="admin-card-title">Handler Performance</div>
+    <table><thead><tr><th>Handler</th><th>Assigned</th><th>Completed</th><th>Reopened</th><th>Completion Rate</th></tr></thead><tbody>
+    ${handlers.map(h=>{
+      const hTickets = DB.tickets.filter(t=>t.assigneeId===h.id);
+      const done = hTickets.filter(t=>['done','closed'].includes(t.status)).length;
+      const reopened = hTickets.filter(t=>t.timeline.some(e=>e.t.toLowerCase().includes('reopen'))).length;
+      const rate = pct(done,hTickets.length);
+      return `<tr style="cursor:default">
+        <td><strong>${h.name}</strong><div style="font-size:11px;color:var(--text-muted)">${h.company}</div></td>
+        <td>${hTickets.length}</td>
+        <td style="color:var(--green);font-weight:700">${done}</td>
+        <td style="color:${reopened>0?'var(--red)':'var(--green)'};font-weight:700">${reopened}</td>
+        <td><div style="font-size:12px;font-weight:700;margin-bottom:4px">${rate}%</div>
+          <div class="progress-bar"><div class="progress-fill ${rate>=80?'green':rate>=50?'amber':''}" style="width:${rate}%"></div></div>
+        </td>
+      </tr>`;
+    }).join('')}
+    </tbody></table>
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// MY TICKETS (Employee)
+// ══════════════════════════════════════════
+function myTickets() {
+  const data = filterBy(myData());
+  return `
+  <div class="page-header">
+    <div><div class="page-title">My Tickets</div><div class="page-sub">${myData().length} ticket(s) raised by you</div></div>
+    <button class="btn btn-navy" onclick="navigate('raise-ticket')">+ Raise Ticket</button>
+  </div>
+  ${filterChips('my-tickets')}
+  <div class="table-card">${renderTable(data)}</div>`;
+}
+
+// ══════════════════════════════════════════
+// RAISE TICKET (Employee)
+// ══════════════════════════════════════════
+function raiseTicket() {
+  const u = curUser();
+  return `
+  <div class="page-header"><div><div class="page-title">Raise Ticket</div><div class="page-sub">Submit a new maintenance request</div></div></div>
+  <div class="form-card">
+    <div style="background:var(--navy-50);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;font-size:13px;">
+      <div style="font-weight:700;color:var(--navy-700);margin-bottom:4px">📋 Your Details (auto-filled)</div>
+      <div style="color:var(--text-muted)">🏢 ${u.company} &nbsp;·&nbsp; 📍 ${u.location} &nbsp;·&nbsp; 🏷 ${u.department}</div>
+    </div>
+    <div class="form-group">
+      <label>Issue Category *</label>
+      <select id="rt-cat"><option value="">— Select Category —</option>${DB.categories.map(c=>`<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="form-group">
+      <label>Issue Description *</label>
+      <textarea id="rt-issue" placeholder="Describe the issue in detail — exact location, when it started, what you observed, any safety concerns..."></textarea>
+    </div>
+    <div class="form-group">
+      <label>Attach Photo <span style="font-size:11px;color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></label>
+      <div class="photo-zone" id="pz-raise">
+        <input type="file" accept="image/*" onchange="handlePhoto(event,'raise')">
+        <div id="pz-raise-placeholder"><div style="font-size:26px;margin-bottom:6px">📷</div><div style="font-size:13px;font-weight:600;color:var(--text-mid)">Click to attach a photo</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">JPG, PNG — Max 5MB</div></div>
+        <img id="pz-raise-preview" class="photo-preview">
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="btn btn-navy" onclick="submitTicket()">Submit Ticket →</button>
+      <button class="btn btn-outline" onclick="navigate('my-tickets')">Cancel</button>
+    </div>
+  </div>`;
+}
+
+function wireRaiseTicket() { uploadedPhoto=null; }
+
+function handlePhoto(e, zone) {
+  const file = e.target.files[0]; if (!file) return;
+  if (file.size>5*1024*1024) { toast('File too large. Max 5MB','err'); return; }
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const data = ev.target.result;
+    if (zone==='raise') { uploadedPhoto=data; showPhotoPreview('pz-raise',data); }
+    else { uploadedCompletionPhoto=data; showPhotoPreview('pz-done',data); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function showPhotoPreview(zoneId, data) {
+  const zone = document.getElementById(zoneId);
+  const preview = document.getElementById(zoneId+'-preview');
+  const placeholder = document.getElementById(zoneId+'-placeholder');
+  if (zone) zone.classList.add('has-photo');
+  if (preview) { preview.src=data; preview.style.display='block'; }
+  if (placeholder) placeholder.style.display='none';
+}
+
+function submitTicket() {
+  const cat = document.getElementById('rt-cat').value;
+  const issue = document.getElementById('rt-issue').value.trim();
+  if (!cat) { toast('Please select a category','err'); return; }
+  if (!issue) { toast('Please describe the issue','err'); return; }
+  const u = curUser();
+  const id = 'TKT-' + String(DB.nextId++).padStart(3,'0');
+  DB.tickets.push({
+    id, category:cat, issue, photo:uploadedPhoto, completionPhoto:null,
+    status:'open', company:u.company, location:u.location, department:u.department,
+    reporter:u.name, reporterId:u.id, assignee:null, assigneeId:null,
+    created:tod(), updated:tod(),
+    timeline:[{t:`Ticket raised by ${u.name}`,d:now()}]
+  });
+  uploadedPhoto=null;
+  toast(`✅ ${id} submitted!`);
+  setTimeout(()=>navigate('my-tickets'),700);
+}
+
+// ══════════════════════════════════════════
+// ALL TICKETS
+// ══════════════════════════════════════════
+function allTickets() {
+  return `
+  <div class="page-header"><div><div class="page-title">All Tickets</div><div class="page-sub">${DB.tickets.length} total tickets</div></div></div>
+  ${filterChips('all-tickets')}
+  <div class="table-card">${renderTable(filterBy(DB.tickets),true)}</div>`;
+}
+
+// ══════════════════════════════════════════
+// ASSIGN WORK (Coordinator)
+// ══════════════════════════════════════════
+function assignWork() {
+  const unassigned = DB.tickets.filter(t=>t.status==='open');
+  const reassignable = DB.tickets.filter(t=>['assigned','accepted','inprogress'].includes(t.status));
+  const handlers = DB.users.filter(u=>u.role==='handler'&&u.active);
+
+  return `
+  <div class="page-header"><div><div class="page-title">Assign Work</div><div class="page-sub">${unassigned.length} open · ${reassignable.length} reassignable</div></div></div>
+
+  ${unassigned.length>0?`
+  <div class="table-card" style="margin-bottom:20px">
+    <div class="table-head-row"><div class="table-card-title">🔴 Unassigned Tickets</div></div>
+    <table><thead><tr><th>ID</th><th>Category</th><th>Department</th><th>Raised By</th><th>Select Handler</th><th></th></tr></thead><tbody>
+    ${unassigned.map(t=>`<tr>
+      <td><code style="color:var(--navy-600);font-size:11px;font-weight:700;cursor:pointer" onclick="openTicket('${t.id}')">${t.id}</code></td>
+      <td><span class="tag">${t.category}</span></td>
+      <td style="font-size:12px">${t.department}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${t.reporter}</td>
+      <td><select id="as-${t.id}" style="margin-bottom:0;padding:7px 10px;font-size:12px">
+        <option value="">— Select Handler —</option>
+        ${handlers.map(h=>`<option value="${h.id}">${h.name}</option>`).join('')}
+      </select></td>
+      <td><button class="btn btn-navy btn-sm" onclick="assignTicket('${t.id}')">Assign</button></td>
+    </tr>`).join('')}
+    </tbody></table>
+  </div>`:'<div class="table-card" style="margin-bottom:20px"><div class="empty"><div class="empty-icon">🎉</div><div class="empty-text">No unassigned tickets!</div></div></div>'}
+
+  ${reassignable.length>0?`
+  <div class="table-card">
+    <div class="table-head-row"><div class="table-card-title">🔄 Reassign Active Tickets</div><div style="font-size:12px;color:var(--text-muted)">Can reassign while Assigned or In Progress</div></div>
+    <table><thead><tr><th>ID</th><th>Category</th><th>Status</th><th>Current Handler</th><th>Reassign To</th><th></th></tr></thead><tbody>
+    ${reassignable.map(t=>`<tr>
+      <td><code style="color:var(--navy-600);font-size:11px;font-weight:700;cursor:pointer" onclick="openTicket('${t.id}')">${t.id}</code></td>
+      <td><span class="tag">${t.category}</span></td>
+      <td>${stBadge(t.status)}</td>
+      <td style="font-size:12px;font-weight:600">${t.assignee}</td>
+      <td><select id="ras-${t.id}" style="margin-bottom:0;padding:7px 10px;font-size:12px">
+        <option value="">— Select Handler —</option>
+        ${handlers.filter(h=>h.id!==t.assigneeId).map(h=>`<option value="${h.id}">${h.name}</option>`).join('')}
+      </select></td>
+      <td><button class="btn btn-amber btn-sm" onclick="reassignTicket('${t.id}')">Reassign</button></td>
+    </tr>`).join('')}
+    </tbody></table>
+  </div>`:''}`;
+}
+
+function assignTicket(id) {
+  const sel = document.getElementById('as-'+id);
+  const handlerId = sel.value;
+  if (!handlerId) { toast('Please select a handler','err'); return; }
+  const handler = DB.users.find(u=>u.id===handlerId);
+  const t = DB.tickets.find(x=>x.id===id); if (!t||!handler) return;
+  t.status='assigned'; t.assignee=handler.name; t.assigneeId=handler.id; t.updated=tod();
+  t.timeline.push({t:`Assigned to ${handler.name} by ${curUser().name}`,d:now()});
+  toast(`✅ ${id} assigned to ${handler.name}`);
+  navigate('assign-work');
+}
+
+function reassignTicket(id) {
+  const sel = document.getElementById('ras-'+id);
+  const handlerId = sel.value;
+  if (!handlerId) { toast('Please select a handler to reassign','err'); return; }
+  const handler = DB.users.find(u=>u.id===handlerId);
+  const t = DB.tickets.find(x=>x.id===id); if (!t||!handler) return;
+  const prev = t.assignee;
+  t.status='assigned'; t.assignee=handler.name; t.assigneeId=handler.id; t.updated=tod();
+  t.timeline.push({t:`Reassigned from ${prev} to ${handler.name} by ${curUser().name}`,d:now()});
+  toast(`🔄 ${id} reassigned to ${handler.name}`);
+  navigate('assign-work');
+}
+
+// ══════════════════════════════════════════
+// CLOSE TICKETS (Coordinator)
+// ══════════════════════════════════════════
+function closeTickets() {
+  const done = DB.tickets.filter(t=>t.status==='done');
+  return `
+  <div class="page-header"><div><div class="page-title">Close Tickets</div><div class="page-sub">${done.length} ticket(s) completed — review and close</div></div></div>
+  <div class="table-card">
+    <div class="table-head-row"><div class="table-card-title">Pending Closure</div></div>
+    ${done.length===0?'<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No tickets awaiting closure</div></div>':`
+    <table><thead><tr><th>ID</th><th>Category</th><th>Handler</th><th>Company</th><th>Completed</th><th>Actions</th></tr></thead><tbody>
+    ${done.map(t=>`<tr>
+      <td><code style="color:var(--navy-600);font-size:11px;font-weight:700;cursor:pointer" onclick="openTicket('${t.id}')">${t.id}</code></td>
+      <td><span class="tag">${t.category}</span></td>
+      <td style="font-size:12px;font-weight:600">${t.assignee}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${t.company}</td>
+      <td style="font-size:11px;color:var(--text-muted)">${t.updated}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-success btn-sm" onclick="openTicket('${t.id}')">Review & Close</button>
+      </td>
+    </tr>`).join('')}
+    </tbody></table>`}
+  </div>`;
+}
+
+// ══════════════════════════════════════════
+// MY WORK (Handler)
+// ══════════════════════════════════════════
+function myWork() {
+  const u = curUser();
+  const mine = DB.tickets.filter(t=>t.assigneeId===u.id);
+  return `
+  <div class="page-header"><div><div class="page-title">My Work Queue</div><div class="page-sub">${mine.length} ticket(s) assigned to you</div></div></div>
+  <div class="table-card">
+    <div class="table-head-row"><div class="table-card-title">Assigned Tasks</div></div>
+    ${mine.length===0?'<div class="empty"><div class="empty-icon">😎</div><div class="empty-text">No tasks assigned yet</div></div>':`
+    <table><thead><tr><th>ID</th><th>Category</th><th>Department</th><th>Status</th><th>Action</th></tr></thead><tbody>
+    ${mine.map(t=>`<tr>
+      <td><code style="color:var(--navy-600);font-size:11px;font-weight:700;cursor:pointer" onclick="openTicket('${t.id}')">${t.id}</code></td>
+      <td><span class="tag">${t.category}</span></td>
+      <td style="font-size:12px">${t.department}</td>
+      <td>${stBadge(t.status)}</td>
+      <td>
+        ${t.status==='assigned'?`<button class="btn btn-navy btn-sm" onclick="handlerAct('${t.id}','accept')">✋ Accept</button>`:''}
+        ${t.status==='accepted'?`<button class="btn btn-amber btn-sm" onclick="handlerAct('${t.id}','start')">▶ Start Work</button>`:''}
+        ${t.status==='inprogress'?`<button class="btn btn-success btn-sm" onclick="openDoneModal('${t.id}')">📷 Mark Done</button>`:''}
+        ${t.status==='done'?`<span style="color:var(--green);font-size:12px;font-weight:700">✓ Awaiting Closure</span>`:''}
+        ${t.status==='closed'?`<span style="color:var(--text-muted);font-size:12px">✓ Closed</span>`:''}
+      </td>
+    </tr>`).join('')}
+    </tbody></table>`}
+  </div>`;
+}
+
+function handlerAct(id, act) {
+  const t = DB.tickets.find(x=>x.id===id); const u = curUser(); if (!t) return;
+  if (act==='accept') {
+    t.status='accepted'; t.updated=tod();
+    t.timeline.push({t:`${u.name} accepted the task`,d:now()});
+    toast('✅ Task accepted');
+  } else if (act==='start') {
+    t.status='inprogress'; t.updated=tod();
+    t.timeline.push({t:`${u.name} started work`,d:now()});
+    toast('▶ Work started');
+  }
+  navigate('my-work');
+}
+
+function openDoneModal(id) {
+  uploadedCompletionPhoto = null;
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-head"><div class="modal-title">📷 Mark Work as Done</div><button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div style="background:var(--amber-soft);border:1px solid var(--amber);border-radius:var(--radius);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--amber);">
+        ⚠️ You must attach a completion photo before marking done.
+      </div>
+      <div class="form-group">
+        <label>Completion Photo *</label>
+        <div class="photo-zone" id="pz-done">
+          <input type="file" accept="image/*" onchange="handlePhoto(event,'done')">
+          <div id="pz-done-placeholder"><div style="font-size:26px;margin-bottom:6px">📷</div><div style="font-size:13px;font-weight:600;color:var(--text-mid)">Click to attach completion photo</div><div style="font-size:11px;color:var(--text-muted);margin-top:2px">Required — proof of completed work</div></div>
+          <img id="pz-done-preview" class="photo-preview">
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-success btn-sm" onclick="submitDone('${id}')">Submit & Mark Done</button>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function submitDone(id) {
+  if (!uploadedCompletionPhoto) { toast('Please attach a completion photo','err'); return; }
+  const t = DB.tickets.find(x=>x.id===id); const u = curUser(); if (!t) return;
+  t.status='done'; t.completionPhoto=uploadedCompletionPhoto; t.updated=tod();
+  t.timeline.push({t:`Work completed by ${u.name} — photo attached`,d:now()});
+  uploadedCompletionPhoto=null;
+  toast('✅ Marked as done! Coordinator will review and close.');
+  closeModal(); navigate('my-work');
+}
+
+// ══════════════════════════════════════════
+// TICKET PANEL
+// ══════════════════════════════════════════
+function openTicket(id) {
+  const t = DB.tickets.find(x=>x.id===id); if (!t) return;
+  const u = curUser();
+  const canCoord = ST.role==='coordinator';
+  const handlers = DB.users.filter(u=>u.role==='handler'&&u.active);
+
+  document.getElementById('panel').innerHTML = `
+    <div class="panel-top">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div>
+          <div class="panel-id">${t.id} · ${t.created}</div>
+          <div class="panel-title">${t.category} — ${t.department}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">${stBadge(t.status)}</div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="closePanel()" style="margin-left:12px">✕</button>
+      </div>
+    </div>
+    <div class="panel-body">
+      <div class="info-grid">
+        <div class="info-cell"><div class="info-key">🏢 Company</div><div class="info-val">${t.company}</div></div>
+        <div class="info-cell"><div class="info-key">📍 Location</div><div class="info-val">${t.location}</div></div>
+        <div class="info-cell"><div class="info-key">🏷 Department</div><div class="info-val">${t.department}</div></div>
+        <div class="info-cell"><div class="info-key">🔧 Category</div><div class="info-val">${t.category}</div></div>
+        <div class="info-cell"><div class="info-key">👤 Raised By</div><div class="info-val">${t.reporter}</div></div>
+        <div class="info-cell"><div class="info-key">🔨 Handler</div><div class="info-val">${t.assignee||'Not assigned'}</div></div>
+      </div>
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Issue Description</div>
+      <div class="issue-box">${t.issue}</div>
+      ${t.photo?`<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Issue Photo</div><img src="${t.photo}" style="max-width:100%;border-radius:10px;border:1px solid var(--border)"></div>`:''}
+      ${t.completionPhoto?`<div style="margin-bottom:16px"><div style="font-size:10px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">✅ Completion Photo (by Handler)</div><img src="${t.completionPhoto}" style="max-width:100%;border-radius:10px;border:2px solid var(--green)"></div>`:''}
+      <div class="divider"></div>
+      <div style="font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px">Activity Timeline</div>
+      <div class="timeline">
+        ${t.timeline.map((e,i)=>`
+          <div class="tl">
+            <div class="tl-lw">
+              <div class="tl-dot ${i===t.timeline.length-1?'gold':''}"></div>
+              ${i<t.timeline.length-1?'<div class="tl-connector"></div>':''}
+            </div>
+            <div style="padding-bottom:10px"><div class="tl-event">${e.t}</div><div class="tl-time">${e.d}</div></div>
+          </div>`).join('')}
+      </div>
+    </div>
+    ${canCoord?`
+    <div class="panel-actions">
+      ${t.status==='done'?`
+        <button class="btn btn-success btn-sm" onclick="closeTicketAction('${t.id}')">✅ Close Ticket</button>
+        <button class="btn btn-danger btn-sm" onclick="reopenTicketAction('${t.id}')">↩ Send Back</button>`:''}
+      ${t.status==='closed'?`
+        <button class="btn btn-amber btn-sm" onclick="reopenTicketAction('${t.id}')">↩ Reopen Ticket</button>`:''}
+      ${!['done','closed'].includes(t.status)?`<span style="font-size:12px;color:var(--text-muted);align-self:center">Use Assign Work page to assign / reassign</span>`:''}
+    </div>`:''}`;
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeTicketAction(id) {
+  const t = DB.tickets.find(x=>x.id===id); if (!t) return;
+  t.status='closed'; t.updated=tod();
+  t.timeline.push({t:`Ticket closed by ${curUser().name}`,d:now()});
+  toast('🎉 Ticket closed!');
+  closePanel(); navigate(ST.currentPage);
+}
+
+function reopenTicketAction(id) {
+  const t = DB.tickets.find(x=>x.id===id); if (!t) return;
+  t.status='assigned'; t.completionPhoto=null; t.updated=tod();
+  t.timeline.push({t:`Ticket reopened by ${curUser().name} — sent back to ${t.assignee}`,d:now()});
+  toast('↩ Ticket reopened — assigned back to ' + t.assignee);
+  closePanel(); navigate(ST.currentPage);
+}
+
+// ══════════════════════════════════════════
+// ADMIN — USER MASTER
+// ══════════════════════════════════════════
+function adminUsers() {
+  const sorted = [...DB.users].sort((a,b)=>['admin','coordinator','employee','handler'].indexOf(a.role)-['admin','coordinator','employee','handler'].indexOf(b.role));
+  return `
+  <div class="page-header">
+    <div><div class="page-title">User Master</div><div class="page-sub">Create and manage all portal users</div></div>
+    <button class="btn btn-navy" onclick="openUserModal()">+ Add User</button>
+  </div>
+  <div class="table-card">
+    <table><thead><tr><th>Name</th><th>Role</th><th>Company</th><th>Location</th><th>Department</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    ${sorted.map(u=>`<tr style="cursor:default">
+      <td><div style="display:flex;align-items:center;gap:10px">
+        <div style="${avatarStyle(u.role)};width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#fff;flex-shrink:0">${u.initials}</div>
+        <div><div style="font-weight:700">${u.name}</div><div style="font-size:11px;color:var(--text-muted)">${u.email}</div></div>
+      </div></td>
+      <td><span class="lu-badge lb-${u.role}">${roleLabel(u.role)}</span></td>
+      <td style="font-size:12px">${u.company}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${u.location}</td>
+      <td style="font-size:12px;color:var(--text-muted)">${u.department}</td>
+      <td><span style="font-size:11px;font-weight:700;color:${u.active?'var(--green)':'var(--red)'}">${u.active?'● Active':'● Inactive'}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline btn-sm" onclick="openUserModal('${u.id}')">Edit</button>
+        ${u.id!=='u1'?`<button class="btn btn-sm" style="background:var(--red-soft);color:var(--red);border:none;font-family:var(--font-body);font-weight:700;cursor:pointer;border-radius:7px;padding:7px 14px;font-size:12px" onclick="toggleUser('${u.id}')">${u.active?'Deactivate':'Activate'}</button>`:''}
+      </td>
+    </tr>`).join('')}
+    </tbody></table>
+  </div>`;
+}
+
+function openUserModal(id) {
+  const u = id ? DB.users.find(x=>x.id===id) : null;
+  const isEdit = !!u;
+  const defCo = u?.company || DB.companies[0];
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-head"><div class="modal-title">${isEdit?'Edit User':'Add New User'}</div><button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group"><label>Full Name *</label><input id="mu-name" value="${u?.name||''}" placeholder="e.g. Ramesh Patel"></div>
+        <div class="form-group"><label>Initials *</label><input id="mu-init" value="${u?.initials||''}" maxlength="2" placeholder="RP"></div>
+      </div>
+      <div class="form-group"><label>Email *</label><input id="mu-email" type="email" value="${u?.email||''}" placeholder="user@company.com"></div>
+      <div class="form-row">
+        <div class="form-group"><label>Role *</label>
+          <select id="mu-role">
+            <option value="employee" ${u?.role==='employee'?'selected':''}>User / Employee</option>
+            <option value="coordinator" ${u?.role==='coordinator'?'selected':''}>Coordinator</option>
+            <option value="handler" ${u?.role==='handler'?'selected':''}>Handler</option>
+            <option value="admin" ${u?.role==='admin'?'selected':''}>Admin</option>
+          </select>
+        </div>
+        <div class="form-group"><label>Company *</label>
+          <select id="mu-co" onchange="syncLocDept()">${DB.companies.map(c=>`<option ${c===defCo?'selected':''}>${c}</option>`).join('')}</select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group"><label>Location *</label>
+          <select id="mu-loc">${(DB.locations[defCo]||[]).map(l=>`<option ${l===u?.location?'selected':''}>${l}</option>`).join('')}</select>
+        </div>
+        <div class="form-group"><label>Department *</label>
+          <select id="mu-dept">${DB.departments.map(d=>`<option ${d===u?.department?'selected':''}>${d}</option>`).join('')}</select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-navy btn-sm" onclick="saveUser('${id||''}')">${isEdit?'Save Changes':'Add User'}</button>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+  document.getElementById('mu-co').addEventListener('change', syncLocDept);
+}
+
+function syncLocDept() {
+  const co = document.getElementById('mu-co').value;
+  const locs = DB.locations[co]||[];
+  document.getElementById('mu-loc').innerHTML = locs.map(l=>`<option>${l}</option>`).join('');
+}
+
+function saveUser(id) {
+  const name = document.getElementById('mu-name').value.trim();
+  const init = document.getElementById('mu-init').value.trim().toUpperCase();
+  const email = document.getElementById('mu-email').value.trim();
+  if (!name||!init||!email) { toast('Fill all required fields','err'); return; }
+  const data = { name, initials:init, email, role:document.getElementById('mu-role').value, company:document.getElementById('mu-co').value, location:document.getElementById('mu-loc').value, department:document.getElementById('mu-dept').value };
+  if (id) { const u=DB.users.find(x=>x.id===id); if(u) Object.assign(u,data); toast('✅ User updated'); }
+  else { DB.users.push({id:'u'+Date.now(),...data,active:true}); toast('✅ User added'); }
+  closeModal(); navigate('users');
+}
+
+function toggleUser(id) {
+  const u=DB.users.find(x=>x.id===id); if (!u) return;
+  u.active=!u.active;
+  toast(u.active?`✅ ${u.name} activated`:`${u.name} deactivated`);
+  navigate('users');
+}
+
+// ══════════════════════════════════════════
+// ADMIN — MASTER DATA SETUP
+// ══════════════════════════════════════════
+function adminSetup() {
+  return `
+  <div class="page-header"><div><div class="page-title">Master Data Setup</div><div class="page-sub">Manage all dropdown data used across the portal</div></div></div>
+  <div class="setup-grid">
+    <div class="setup-card">
+      <div class="setup-card-title">🏢 Companies <button class="btn btn-navy btn-sm" onclick="openAddMaster('company')">+ Add</button></div>
+      ${DB.companies.map(c=>`<div class="setup-item"><div><div class="setup-item-name">${c}</div><div class="setup-item-sub">${(DB.locations[c]||[]).length} location(s)</div></div><button class="setup-item-del" onclick="delMaster('company','${c}')">🗑</button></div>`).join('')}
+    </div>
+    <div class="setup-card">
+      <div class="setup-card-title">📍 Locations <button class="btn btn-navy btn-sm" onclick="openAddMaster('location')">+ Add</button></div>
+      ${DB.companies.map(co=>(DB.locations[co]||[]).map(l=>`<div class="setup-item"><div><div class="setup-item-name">${l}</div><div class="setup-item-sub">${co}</div></div><button class="setup-item-del" onclick="delLocation('${co}','${l}')">🗑</button></div>`).join('')).join('')}
+    </div>
+    <div class="setup-card">
+      <div class="setup-card-title">🏷 Departments <button class="btn btn-navy btn-sm" onclick="openAddMaster('department')">+ Add</button></div>
+      ${DB.departments.map(d=>`<div class="setup-item"><div class="setup-item-name">${d}</div><button class="setup-item-del" onclick="delMaster('department','${d}')">🗑</button></div>`).join('')}
+    </div>
+    <div class="setup-card">
+      <div class="setup-card-title">🔧 Categories <button class="btn btn-navy btn-sm" onclick="openAddMaster('category')">+ Add</button></div>
+      ${DB.categories.map(c=>`<div class="setup-item"><div class="setup-item-name">${c}</div><button class="setup-item-del" onclick="delMaster('category','${c}')">🗑</button></div>`).join('')}
+    </div>
+  </div>`;
+}
+
+function openAddMaster(type) {
+  const labels = {company:'Company',location:'Location',department:'Department',category:'Issue Category'};
+  const extra = type==='location'?`<div class="form-group"><label>Under Company *</label><select id="ai-co">${DB.companies.map(c=>`<option>${c}</option>`).join('')}</select></div>`:'';
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-head"><div class="modal-title">Add ${labels[type]}</div><button class="btn btn-ghost btn-sm" onclick="closeModal()">✕</button></div>
+    <div class="modal-body">${extra}<div class="form-group"><label>Name *</label><input id="ai-name" placeholder="Enter name..."></div></div>
+    <div class="modal-foot">
+      <button class="btn btn-outline btn-sm" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-navy btn-sm" onclick="saveMaster('${type}')">Save</button>
+    </div>`;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+
+function saveMaster(type) {
+  const name = document.getElementById('ai-name').value.trim();
+  if (!name) { toast('Enter a name','err'); return; }
+  if (type==='company') { if (!DB.companies.includes(name)){DB.companies.push(name);DB.locations[name]=[];} }
+  else if (type==='location') { const co=document.getElementById('ai-co').value; if (!DB.locations[co]) DB.locations[co]=[]; if (!DB.locations[co].includes(name)) DB.locations[co].push(name); }
+  else if (type==='department') { if (!DB.departments.includes(name)) DB.departments.push(name); }
+  else if (type==='category') { if (!DB.categories.includes(name)) DB.categories.push(name); }
+  toast(`✅ ${name} added`); closeModal(); navigate('setup');
+}
+
+function delMaster(type, name) {
+  if (type==='company') { if (DB.companies.length<=1){toast('At least one required','err');return;} DB.companies=DB.companies.filter(c=>c!==name); delete DB.locations[name]; }
+  else if (type==='department') { if (DB.departments.length<=1){toast('At least one required','err');return;} DB.departments=DB.departments.filter(d=>d!==name); }
+  else if (type==='category') { if (DB.categories.length<=1){toast('At least one required','err');return;} DB.categories=DB.categories.filter(c=>c!==name); }
+  toast(`${name} removed`); navigate('setup');
+}
+function delLocation(co,loc) { DB.locations[co]=(DB.locations[co]||[]).filter(l=>l!==loc); toast(`${loc} removed`); navigate('setup'); }
+
+// ══════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════
+function curUser() { return DB.users.find(u=>u.id===ST.userId)||DB.users[0]; }
+
+function myData() {
+  const u = curUser();
+  if (ST.role==='employee') return DB.tickets.filter(t=>t.reporterId===u.id);
+  if (ST.role==='handler') return DB.tickets.filter(t=>t.assigneeId===u.id);
+  return DB.tickets;
+}
+
+function filterBy(arr) {
+  if (ST.filter==='all') return arr;
+  if (ST.filter==='inprogress') return arr.filter(t=>['assigned','accepted','inprogress'].includes(t.status));
+  if (ST.filter==='done') return arr.filter(t=>['done','closed'].includes(t.status));
+  return arr.filter(t=>t.status===ST.filter);
+}
+
+function filterChips(page) {
+  const filters = [{f:'all',l:'All'},{f:'open',l:'Open'},{f:'assigned',l:'Assigned'},{f:'inprogress',l:'In Progress'},{f:'done',l:'Completed'},{f:'closed',l:'Closed'}];
+  return `<div class="filter-row">${filters.map(x=>`<button class="chip ${ST.filter===x.f?'active':''}" onclick="setFilter('${x.f}','${page}')">${x.l}</button>`).join('')}</div>`;
+}
+
+function setFilter(f,page) { ST.filter=f; navigate(page); }
+
+function renderTable(data, showCompany=false) {
+  if (!data.length) return '<div class="empty"><div class="empty-icon">📭</div><div class="empty-text">No tickets found</div></div>';
+  return `<table><thead><tr><th>ID</th><th>Category</th><th>Department</th>${showCompany?'<th>Company</th>':''}<th>Status</th><th>Handler</th><th>Date</th></tr></thead><tbody>
+  ${data.map(t=>`<tr onclick="openTicket('${t.id}')">
+    <td><code style="color:var(--navy-600);font-size:11px;font-weight:700">${t.id}</code></td>
+    <td><span class="tag">${t.category}</span></td>
+    <td style="font-size:12px">${t.department}</td>
+    ${showCompany?`<td style="font-size:12px;color:var(--text-muted)">${t.company}</td>`:''}
+    <td>${stBadge(t.status)}</td>
+    <td style="font-size:12px;color:var(--text-muted)">${t.assignee||'—'}</td>
+    <td style="font-size:12px;color:var(--text-muted)">${t.updated}</td>
+  </tr>`).join('')}
+  </tbody></table>`;
+}
+
+function stBadge(s) {
+  const map={open:'b-open Open',assigned:'b-assigned Assigned',accepted:'b-accepted Accepted',inprogress:'b-inprogress In Progress',done:'b-done Done',closed:'b-closed Closed'};
+  const parts=(map[s]||'b-open Open').split(' '); const cls=parts.shift();
+  return `<span class="badge ${cls}">${parts.join(' ')}</span>`;
+}
+
+function roleLabel(r) { return {employee:'User',coordinator:'Coordinator',handler:'Handler',admin:'Admin'}[r]||r; }
+function avatarStyle(r) { return {admin:'background:#7c3aed',coordinator:'background:#b45309',employee:'background:#1c3564',handler:'background:#1a7a4a'}[r]||'background:#1c3564'; }
+function countBy(arr,key) { const c={}; arr.forEach(x=>{c[x[key]]=(c[x[key]]||0)+1;}); return c; }
+function pct(n,total) { return total?Math.round((n||0)/total*100):0; }
+function avgResolutionDays(tickets) { if (!tickets.length) return '—'; return Math.round(tickets.length*1.8)+'d avg'; }
+function tod() { return new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}); }
+function now() { return new Date().toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }
+
+function closePanel() { document.getElementById('overlay').classList.remove('open'); }
+function closePanelBg(e) { if (e.target===document.getElementById('overlay')) closePanel(); }
+function closeModal() { document.getElementById('modal-overlay').classList.remove('open'); }
+function closeModalBg(e) { if (e.target===document.getElementById('modal-overlay')) closeModal(); }
+
+let toastT;
+function toast(msg,type='') {
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='show'+(type?' '+type:'');
+  clearTimeout(toastT); toastT=setTimeout(()=>el.classList.remove('show'),3200);
+}
+</script>
+</body>
+</html>
