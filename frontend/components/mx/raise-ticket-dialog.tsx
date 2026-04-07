@@ -217,7 +217,6 @@ export function RaiseTicketDialog({
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="text-sm text-secondary-700">
                   <div className="font-semibold">Drag & drop, use camera, or choose a file</div>
-                  <div className="text-xs text-muted-foreground">JPG/PNG/WebP/GIF, max 5MB.</div>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" variant="outline" size="sm" onClick={() => cameraRef.current?.open()}>

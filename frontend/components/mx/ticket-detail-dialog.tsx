@@ -186,52 +186,57 @@ export function TicketDetailDialog({
     <Dialog
       isOpen={detailId != null}
       onClose={handleClose}
-      title={detail ? detail.complaintNo : "Ticket"}
+      title=""
       size="xl"
+      hideHeader
+      hideCloseButton
+      contentScroll={false}
     >
       {detail && (
-        <div className="max-h-[80vh] overflow-y-auto">
-          <div className="sticky top-0 z-10 border-b border-secondary-100 bg-white/95 px-6 py-4 backdrop-blur">
-            <div className="overflow-hidden rounded-2xl border border-secondary-200/40 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-800 px-4 py-3 text-white shadow-sm">
-              <div className="flex items-start justify-between gap-4">
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <div className="font-mono text-sm font-extrabold tracking-wide">{detail.complaintNo}</div>
-                    <span
-                      className={[
-                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold",
-                        statusMeta(detail.status).pill,
-                      ].join(" ")}
-                    >
-                      <span className={`h-1.5 w-1.5 rounded-full ${statusMeta(detail.status).dot}`} />
-                      {statusMeta(detail.status).label}
-                    </span>
-                  </div>
-                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/85">
-                    <span className="inline-flex items-center gap-1.5">
-                      <CalendarDays className="h-3.5 w-3.5" />
-                      {format(new Date(detail.createdAt), "dd MMM yyyy")}
-                    </span>
-                  </div>
-                  <div className="mt-2 text-sm font-semibold text-white/95">
-                    {detail.categoryName ?? "—"} <span className="text-white/70">→</span> {detail.departmentName ?? "—"}
-                  </div>
+        <div className="flex flex-col h-full overflow-hidden">
+          {/* Custom Header with Gradient - Touches all edges */}
+          <div className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-800 px-7 py-6 text-white shadow-lg shrink-0">
+            <div className="flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="font-mono text-lg font-black tracking-wider">{detail.complaintNo}</div>
+                  <span
+                    className={[
+                      "inline-flex items-center gap-1.5 rounded-full border px-3 py-0.5 text-[11px] font-black uppercase tracking-tight",
+                      statusMeta(detail.status).pill,
+                    ].join(" ")}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${statusMeta(detail.status).dot}`} />
+                    {statusMeta(detail.status).label}
+                  </span>
                 </div>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  className="h-9 w-9 rounded-xl p-0 text-white hover:bg-white/15"
-                  onClick={handleClose}
-                  title="Close"
-                >
-                  <X className="h-5 w-5" />
-                </Button>
+                <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-white/80">
+                  <span className="inline-flex items-center gap-1.5">
+                    <CalendarDays className="h-3.5 w-3.5" />
+                    {format(new Date(detail.createdAt), "dd MMM yyyy")}
+                  </span>
+                </div>
+                <div className="mt-3 text-sm font-bold text-white">
+                  {detail.categoryName ?? "Uncategorized"} 
+                  <span className="mx-2 text-white/50">→</span> 
+                  {detail.departmentName ?? "General"}
+                </div>
               </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-10 w-10 shrink-0 rounded-full p-0 text-white/90 hover:bg-white/20 hover:text-white transition-all transform active:scale-95"
+                onClick={handleClose}
+                title="Close"
+              >
+                <X className="h-6 w-6" />
+              </Button>
             </div>
           </div>
 
-          <div className="space-y-6 p-6">
+          {/* Scrolling Content Area */}
+          <div className="flex-1 overflow-y-auto space-y-7 p-7">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <InfoTile icon={Building2} label="Company" value={detail.companyName ?? "—"} iconClassName="text-sky-700" />
               <InfoTile icon={MapPin} label="Location" value={detail.locationName ?? "—"} iconClassName="text-indigo-700" />

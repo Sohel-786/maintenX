@@ -24,6 +24,8 @@ interface DialogProps {
   closeButtonDisabled?: boolean;
   /** When true, the default header (title and X button) is hidden */
   hideHeader?: boolean;
+  /** When true, hides the automatic close button (X) in either header or absolute pos. */
+  hideCloseButton?: boolean;
   /** When false, this dialog does not lock body scroll (use for attachment list/viewer to avoid scroll lock issues) */
   lockScroll?: boolean;
   /**
@@ -52,6 +54,7 @@ export function Dialog({
   closeOnBackdropClick = false,
   closeButtonDisabled = false,
   hideHeader = false,
+  hideCloseButton = false,
   lockScroll = true,
   confirmOnEscWhenDirty = false,
   isDirty = false,
@@ -193,7 +196,7 @@ export function Dialog({
         window.removeEventListener("keydown", handleKeyDown, true);
       };
     }
-  }, [isOpen, handleClose]);
+  }, [isOpen, handleClose, lockScroll]);
 
   // Handle initial focus only once when dialog opens
   useEffect(() => {
@@ -283,29 +286,32 @@ export function Dialog({
               {!hideHeader && (
                 <div className="flex items-center justify-between p-6 border-b border-border">
                   <h2 id="dialog-title" className="text-xl font-semibold text-foreground">{title}</h2>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      e.preventDefault();
-                      onClose();
-                    }}
-                    disabled={closeButtonDisabled}
-                    className="h-8 w-8 p-0"
-                    title={closeButtonDisabled ? "Please wait" : "Close"}
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
+                  {!hideCloseButton && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        onClose();
+                      }}
+                      disabled={closeButtonDisabled}
+                      className="h-8 w-8 p-0"
+                      title={closeButtonDisabled ? "Please wait" : "Close"}
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               )}
 
-              {hideHeader && !closeButtonDisabled && (
+              {hideHeader && !hideCloseButton && (
                 <button
                   onClick={onClose}
                   aria-label="Close dialog"
-                  className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-all z-[1010]"
+                  disabled={closeButtonDisabled}
+                  className="absolute top-4 right-4 p-2 text-muted-foreground hover:text-foreground hover:bg-muted rounded-full transition-all z-[1010] disabled:opacity-50"
                 >
                   <X className="h-5 w-5" />
                 </button>
