@@ -12,8 +12,8 @@ interface CreateUserData {
   lastName: string;
   role: Role;
   isActive?: boolean;
-  avatar?: string | null;
   mobileNumber?: string | null;
+  profileDepartment?: string | null;
   companyId: number;
   locationId: number;
 }
@@ -26,6 +26,7 @@ interface UpdateUserData {
   role?: Role;
   isActive?: boolean;
   mobileNumber?: string | null;
+  profileDepartment?: string | null;
   companyId?: number;
   locationId?: number;
 }

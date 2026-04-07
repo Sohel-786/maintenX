@@ -29,7 +29,6 @@ export interface User {
   decryptedPassword?: string | null;
   role: Role;
   isActive: boolean;
-  avatar?: string | null;
   mobileNumber?: string | null;
   profileDepartment?: string | null;
   defaultCompanyId?: number | null;
@@ -137,16 +136,14 @@ export interface DashboardMetrics {
 export interface ComplaintListItem {
   id: number;
   complaintNo: string;
-  title: string;
   descriptionPreview?: string | null;
   locationId: number;
   locationName?: string | null;
   companyName?: string | null;
   categoryId: number;
   categoryName?: string | null;
-  departmentId?: number | null;
+  departmentId: number;
   departmentName?: string | null;
-  priority: ComplaintPriority;
   status: ComplaintStatus;
   assignedHandlerUserId?: number | null;
   assignedHandlerName?: string | null;
@@ -175,16 +172,12 @@ export interface ComplaintDetail extends ComplaintListItem {
 
 export interface ComplaintCategory {
   id: number;
-  locationId: number;
-  locationName?: string | null;
   name: string;
   isActive: boolean;
 }
 
 export interface FacilityDepartment {
   id: number;
-  locationId: number;
-  locationName?: string | null;
   name: string;
   isActive: boolean;
 }

@@ -98,10 +98,10 @@ namespace net_backend.Controllers
                 LastName = request.LastName,
                 Role = role,
                 IsActive = request.IsActive,
-                Avatar = string.IsNullOrWhiteSpace(request.Avatar) ? "/avatar/avatar.svg" : request.Avatar,
                 MobileNumber = request.MobileNumber,
                 DefaultCompanyId = request.CompanyId,
                 DefaultLocationId = request.LocationId,
+                ProfileDepartment = string.IsNullOrWhiteSpace(request.ProfileDepartment) ? null : request.ProfileDepartment.Trim(),
                 CreatedBy = request.CreatedBy,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
@@ -159,8 +159,9 @@ namespace net_backend.Controllers
                 user.Password = BCrypt.Net.BCrypt.HashPassword(request.Password);
                 user.EncryptedPassword = AesHelper.Encrypt(request.Password, _aesKey);
             }
-            if (request.Avatar != null) user.Avatar = string.IsNullOrEmpty(request.Avatar) ? null : request.Avatar;
             if (request.MobileNumber != null) user.MobileNumber = request.MobileNumber;
+            if (request.ProfileDepartment != null)
+                user.ProfileDepartment = string.IsNullOrWhiteSpace(request.ProfileDepartment) ? null : request.ProfileDepartment.Trim();
 
             // Validation for MobileNumber
             if ((user.Role == Role.COORDINATOR || user.Role == Role.HANDLER) && string.IsNullOrEmpty(user.MobileNumber))

@@ -1,11 +1,11 @@
 "use client";
 
 import { User, Role } from "@/types";
-import { useAppSettings, useCompany } from "@/hooks/use-settings";
+import { useAppSettings, useCompany, useCurrentUserPermissions } from "@/hooks/use-settings";
 import { useLocationContext } from "@/contexts/location-context";
 import { useLogout } from "@/hooks/use-auth-mutations";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { Building2, MapPin } from "lucide-react";
+import { Building2, MapPin, ChevronDown, LogOut } from "lucide-react";
 
 function roleLabel(role: Role) {
   switch (role) {
@@ -24,10 +24,11 @@ function initials(u: User) {
   return `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase() || "U";
 }
 
-export function MxTopbar({ user }: { user: User }) {
+export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?: number }) {
   const { data: appSettings } = useAppSettings();
+  const { data: permissions } = useCurrentUserPermissions();
   const { selected, allowedAccess, getAllPairs } = useLocationContext();
-  const { data: currentCompany } = useCompany(selected?.companyId);
+  const { data: currentCompany, isLoading: isCompanyLoading } = useCompany(selected?.companyId);
   const pairs = getAllPairs(allowedAccess);
   const currentPair = selected
     ? pairs.find((p) => p.companyId === selected.companyId && p.locationId === selected.locationId)
@@ -36,71 +37,88 @@ export function MxTopbar({ user }: { user: User }) {
 
   const openSwitch = () => window.dispatchEvent(new CustomEvent("openOrgDialog"));
 
-  const brand =
-    appSettings?.softwareName?.trim() || "MaintenX";
+  const brand = appSettings?.softwareName?.trim() || "MaintenX";
+
+  // Fresh company logo from the API
+  const logoPath = !isCompanyLoading && currentCompany !== undefined
+    ? currentCompany.logoUrl
+    : currentPair?.companyLogo;
+
+  const logoUrl = logoPath 
+    ? (logoPath.startsWith("http") || logoPath.startsWith("blob:") ? logoPath : (logoPath.startsWith("/") ? logoPath : `/${logoPath}`))
+    : null;
+  const hasLogo = Boolean(logoUrl);
+
+  const isHorizontal = permissions?.navigationLayout === 'HORIZONTAL';
 
   return (
     <header
-      className="mx-topbar flex h-[62px] shrink-0 items-center gap-5 px-6 text-white shadow-md"
-      style={{ background: "var(--mx-navy-900)" }}
+      className="mx-topbar sticky top-0 z-40 flex h-20 shrink-0 items-center gap-6 px-6 text-white shadow-md"
+      style={{ background: "var(--mx-navy-900)", paddingLeft: 24 + leftOffsetPx }}
     >
-      <div className="flex min-w-0 items-center gap-2.5">
-        <div
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm"
-          style={{
-            background: "linear-gradient(135deg,#f59e0b,#ef4444)",
-          }}
-        >
-          🔩
-        </div>
-        <div className="min-w-0">
-          <div
-            className="truncate font-semibold leading-tight tracking-tight"
-            style={{ fontFamily: "var(--font-playfair),serif", fontSize: "1.05rem" }}
-          >
-            Aira <span style={{ color: "var(--mx-gold)" }}>Maintenance</span>
+      <div className="flex items-center gap-6 min-w-0">
+        {hasLogo ? (
+          <div className="flex items-center shrink-0 bg-transparent">
+            <img
+              src={logoUrl!}
+              alt=""
+              className="max-h-[72px] max-w-[140px] w-auto h-auto object-contain object-center"
+            />
           </div>
-          <div className="truncate text-[10px] uppercase tracking-widest text-white/50">{brand}</div>
-        </div>
-      </div>
-      <div className="h-7 w-px shrink-0 bg-white/10" />
-      <div className="hidden min-w-0 text-xs sm:block" style={{ color: "var(--mx-navy-200)" }}>
-        {user.role === Role.ADMIN ? (
-          <>
-            <Building2 className="mr-1 inline h-3.5 w-3.5 opacity-70" />
-            <strong className="text-white">System administrator</strong>
-          </>
         ) : (
-          <>
-            <Building2 className="mr-1 inline h-3.5 w-3.5 opacity-70" />
-            <strong className="text-white">{currentCompany?.name ?? currentPair?.companyName ?? "Company"}</strong>
-          </>
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center text-white/85">
+            <Building2 className="h-9 w-9" />
+          </div>
         )}
-      </div>
-      <div className="h-7 w-px shrink-0 bg-white/10" />
-      <div className="hidden min-w-0 text-xs md:block" style={{ color: "var(--mx-navy-200)" }}>
-        <MapPin className="mr-1 inline h-3.5 w-3.5 opacity-70" />
-        <strong className="text-white">{currentPair?.locationName ?? "Location"}</strong>
-        {pairs.length > 1 && (
+
+        <div className="hidden h-10 w-px bg-white/10 lg:block" />
+
+        {currentPair ? (
           <button
             type="button"
             onClick={openSwitch}
-            className="ml-2 rounded border border-white/15 px-2 py-0.5 text-[10px] font-semibold text-white/80 hover:bg-white/10"
+            className="flex min-w-0 items-center gap-3 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-left shadow-sm transition-all duration-200 hover:bg-white/10 focus:outline-none focus:ring-1 focus:ring-white/20"
+            title="Switch company or location"
           >
-            Switch
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-white/5 ring-1 ring-white/10">
+                <Building2 className="h-3.5 w-3.5 text-white/85" />
+              </div>
+              <span className="truncate text-xs font-bold text-white max-w-[140px] hidden sm:block">
+                {currentPair.companyName}
+              </span>
+            </div>
+            <div className="h-5 w-px bg-white/10" />
+            <div className="flex min-w-0 items-center gap-2">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded bg-white/5 ring-1 ring-white/10">
+                <MapPin className="h-3.5 w-3.5 text-white/85" />
+              </div>
+              <span className="truncate text-xs font-bold text-white max-w-[120px] hidden sm:block">
+                {currentPair.locationName}
+              </span>
+            </div>
+            {pairs.length > 1 && <ChevronDown className="h-3.5 w-3.5 text-white/60" />}
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={openSwitch}
+            className="hidden items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-xs font-bold text-white shadow-sm transition-all hover:bg-white/10"
+          >
+            <Building2 className="h-4 w-4" />
+            Select company/location
+            <ChevronDown className="h-3.5 w-3.5 text-white/60" />
           </button>
         )}
       </div>
-      <div className="ml-auto flex items-center gap-3">
+
+      <div className="ml-auto flex items-center gap-5">
         <ThemeToggle />
-        <div
-          className="flex items-center gap-2.5 rounded-full border border-white/10 py-1 pl-1 pr-3"
-          style={{ background: "rgba(255,255,255,.06)" }}
-        >
+        
+        <div className="flex items-center gap-3 min-w-0">
           <div
-            className="flex h-[30px] w-[30px] shrink-0 items-center justify-center rounded-full text-[11px] font-bold text-white"
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white shadow-sm ring-2 ring-primary-500 ring-offset-2 ring-offset-[#0f172a]"
             style={{
-              border: "2px solid var(--mx-gold)",
               background:
                 user.role === Role.ADMIN
                   ? "#7c3aed"
@@ -113,23 +131,30 @@ export function MxTopbar({ user }: { user: User }) {
           >
             {initials(user)}
           </div>
-          <div className="min-w-0 text-left">
-            <div className="truncate text-xs font-semibold text-white">
+          <div className="hidden min-w-0 flex-col md:flex">
+            <span className="truncate text-sm font-bold text-white">
               {user.firstName} {user.lastName}
-            </div>
-            <div className="text-[10px]" style={{ color: "var(--mx-navy-200)" }}>
+            </span>
+            <span className="truncate text-xs" style={{ color: "var(--mx-navy-200)" }}>
               {roleLabel(user.role)}
-            </div>
+            </span>
           </div>
         </div>
-        <button
-          type="button"
-          onClick={() => logoutMutation.mutate()}
-          className="rounded-md border border-white/15 px-3 py-1.5 text-xs font-medium transition-colors hover:border-red-400/50 hover:text-red-300"
-          style={{ color: "var(--mx-navy-200)" }}
-        >
-          Sign out
-        </button>
+
+        {/* Header Logout Button (Only if Horizontal mode is active) */}
+        {isHorizontal && (
+          <>
+            <div className="h-8 w-px bg-white/10 hidden sm:block" />
+            <button
+              type="button"
+              onClick={() => logoutMutation.mutate()}
+              className="flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3 text-xs font-bold text-white/80 transition-all hover:border-red-400/50 hover:text-red-300 hover:bg-red-900/10"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="hidden md:inline">Sign out</span>
+            </button>
+          </>
+        )}
       </div>
     </header>
   );

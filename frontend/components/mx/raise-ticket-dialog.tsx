@@ -1,26 +1,27 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
-import { ComplaintCategory, ComplaintPriority, FacilityDepartment, Role } from "@/types";
+import { ComplaintCategory, FacilityDepartment, Role } from "@/types";
 import { useCurrentUserPermissions } from "@/hooks/use-settings";
+import { useCurrentUser } from "@/hooks/use-current-user";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "react-hot-toast";
+import { CameraPhotoInput, type CameraPhotoInputRef } from "@/components/ui/camera-photo-input";
+import { AttachmentListDialog } from "@/components/ui/attachment-list-dialog";
+import { Camera, Upload, Eye, X } from "lucide-react";
 
 const schema = z.object({
-  title: z.string().max(200).optional(),
-  description: z.string().min(10, "Please add more detail (at least 10 characters)"),
+  description: z.string().min(5, "Description is required"),
   categoryId: z.coerce.number().min(1, "Select a category"),
-  departmentId: z.coerce.number().optional(),
-  priority: z.nativeEnum(ComplaintPriority),
+  departmentId: z.coerce.number().min(1, "Select a department"),
 });
 
 export type RaiseTicketFormValues = z.infer<typeof schema>;
@@ -34,29 +35,32 @@ export function RaiseTicketDialog({
 }) {
   const queryClient = useQueryClient();
   const { data: permissions } = useCurrentUserPermissions();
-  const [files, setFiles] = useState<File[]>([]);
+  const { user: currentUser } = useCurrentUser();
+  const [pendingPhotoFiles, setPendingPhotoFiles] = useState<File[]>([]);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const cameraRef = useRef<CameraPhotoInputRef>(null);
 
   const form = useForm<RaiseTicketFormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      priority: ComplaintPriority.Medium,
       categoryId: 0,
-      departmentId: undefined,
-      title: "",
+      departmentId: 0,
       description: "",
     },
   });
 
+  const effectiveAttachmentCount = pendingPhotoFiles.length;
+
   useEffect(() => {
     if (!open) return;
     form.reset({
-      priority: ComplaintPriority.Medium,
       categoryId: 0,
-      departmentId: undefined,
-      title: "",
+      departmentId: 0,
       description: "",
     });
-    setFiles([]);
+    setPendingPhotoFiles([]);
   }, [open, form]);
 
   const { data: categories = [] } = useQuery({
@@ -77,28 +81,36 @@ export function RaiseTicketDialog({
     enabled: open && !!permissions?.raiseComplaint,
   });
 
+  // Default department selection from user's profileDepartment (name -> id mapping)
+  useEffect(() => {
+    if (!open) return;
+    if (!departments.length) return;
+    const current = form.getValues("departmentId");
+    if (current && current > 0) return;
+    const pref = currentUser?.profileDepartment?.trim();
+    if (!pref) return;
+    const match = departments.find((d) => d.name.trim().toLowerCase() === pref.toLowerCase());
+    if (match) form.setValue("departmentId", match.id, { shouldValidate: true });
+  }, [open, departments, currentUser?.profileDepartment, form]);
+
   const mutation = useMutation({
     mutationFn: async (values: RaiseTicketFormValues) => {
-      const urls: string[] = [];
-      for (const f of files) {
-        const fd = new FormData();
-        fd.append("file", f);
-        const res = await api.post("/complaints/attachments", fd, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        const url = (res.data?.data as { url?: string })?.url;
-        if (url) urls.push(url);
-      }
-      const titleTrim = values.title?.trim();
-      await api.post("/complaints", {
-        title: titleTrim && titleTrim.length > 0 ? titleTrim : undefined,
+      const createRes = await api.post("/complaints", {
         description: values.description,
         categoryId: values.categoryId,
-        departmentId:
-          values.departmentId != null && values.departmentId > 0 ? values.departmentId : undefined,
-        priority: values.priority,
-        imageUrls: urls.length ? urls : undefined,
+        departmentId: values.departmentId,
       });
+      const created = createRes.data?.data as { id?: number } | undefined;
+      const id = created?.id;
+      if (id && pendingPhotoFiles.length) {
+        for (const f of pendingPhotoFiles) {
+          const fd = new FormData();
+          fd.append("file", f);
+          await api.post(`/complaints/${id}/raised-photo`, fd, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["complaints"] });
@@ -124,8 +136,8 @@ export function RaiseTicketDialog({
       title="Raise ticket"
       size="lg"
       contentScroll
-      confirmOnEscWhenDirty={form.formState.isDirty || files.length > 0}
-      isDirty={form.formState.isDirty || files.length > 0}
+      confirmOnEscWhenDirty={form.formState.isDirty || pendingPhotoFiles.length > 0}
+      isDirty={form.formState.isDirty || pendingPhotoFiles.length > 0}
       escConfirmTitle="Discard ticket?"
       escConfirmDescription="You have unsaved changes. Close without saving?"
     >
@@ -138,26 +150,9 @@ export function RaiseTicketDialog({
             Creates a maintenance ticket for the currently selected location. Attachments are optional.
           </p>
           <div>
-            <Label htmlFor="raise-title">Title (optional)</Label>
-            <Input
-              id="raise-title"
-              className="mt-1"
-              placeholder="Defaults to category name if empty"
-              {...form.register("title")}
-            />
-            {form.formState.errors.title && (
-              <p className="mt-1 text-sm text-destructive">{form.formState.errors.title.message}</p>
-            )}
-          </div>
-          <div>
-            <Label htmlFor="raise-desc">Description</Label>
-            <Textarea id="raise-desc" className="mt-1 min-h-[120px]" {...form.register("description")} />
-            {form.formState.errors.description && (
-              <p className="mt-1 text-sm text-destructive">{form.formState.errors.description.message}</p>
-            )}
-          </div>
-          <div>
-            <Label>Category</Label>
+            <Label>
+              Category <span className="text-red-600">*</span>
+            </Label>
             <select
               className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
               {...form.register("categoryId", { valueAsNumber: true })}
@@ -174,42 +169,112 @@ export function RaiseTicketDialog({
             )}
           </div>
           <div>
-            <Label>Department (optional)</Label>
+            <Label>
+              Department <span className="text-red-600">*</span>
+            </Label>
             <select
               className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
               {...form.register("departmentId", { valueAsNumber: true })}
             >
-              <option value={0}>— None —</option>
+              <option value={0}>Select…</option>
               {departments.map((d) => (
                 <option key={d.id} value={d.id}>
                   {d.name}
                 </option>
               ))}
             </select>
+            {form.formState.errors.departmentId && (
+              <p className="mt-1 text-sm text-destructive">{form.formState.errors.departmentId.message}</p>
+            )}
           </div>
           <div>
-            <Label>Photos (optional)</Label>
-            <input
-              type="file"
-              accept="image/*"
-              multiple
-              className="mt-1 block w-full text-sm text-secondary-700 file:mr-3 file:rounded-md file:border-0 file:bg-primary-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-primary-800"
-              onChange={(e) => setFiles(Array.from(e.target.files ?? []))}
-            />
-            <p className="mt-1 text-xs text-muted-foreground">Images only, max 5MB each.</p>
+            <Label htmlFor="raise-desc">
+              Description <span className="text-red-600">*</span>
+            </Label>
+            <Textarea id="raise-desc" className="mt-1 min-h-[120px]" {...form.register("description")} />
+            {form.formState.errors.description && (
+              <p className="mt-1 text-sm text-destructive">{form.formState.errors.description.message}</p>
+            )}
           </div>
           <div>
-            <Label>Priority</Label>
-            <select
-              className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
-              {...form.register("priority")}
+            <Label>Photo (optional)</Label>
+            <div
+              className={[
+                "mt-1 rounded-xl border border-dashed bg-white p-4 transition-colors",
+                isDragging ? "border-primary-400 bg-primary-50/40" : "border-secondary-200",
+              ].join(" ")}
+              onDragEnter={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); }}
+              onDragLeave={(e) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); }}
+              onDrop={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setIsDragging(false);
+                const incoming = Array.from(e.dataTransfer.files ?? []).filter((f) => f.type.startsWith("image/"));
+                if (incoming.length) setPendingPhotoFiles((prev) => [...prev, ...incoming]);
+              }}
             >
-              {Object.values(ComplaintPriority).map((p) => (
-                <option key={p} value={p}>
-                  {p}
-                </option>
-              ))}
-            </select>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="text-sm text-secondary-700">
+                  <div className="font-semibold">Drag & drop, use camera, or choose a file</div>
+                  <div className="text-xs text-muted-foreground">JPG/PNG/WebP/GIF, max 5MB.</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" variant="outline" size="sm" onClick={() => cameraRef.current?.open()}>
+                    <Camera className="mr-1.5 h-4 w-4" />
+                    Camera
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    <Upload className="mr-1.5 h-4 w-4" />
+                    Choose file
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setAttachmentsOpen(true)}
+                    disabled={effectiveAttachmentCount === 0}
+                    title={effectiveAttachmentCount === 0 ? "No attachments" : "View attachments"}
+                  >
+                    <Eye className="mr-1.5 h-4 w-4" />
+                    View ({effectiveAttachmentCount})
+                  </Button>
+                  {effectiveAttachmentCount > 0 && (
+                    <Button type="button" variant="ghost" size="sm" onClick={() => setPendingPhotoFiles([])}>
+                      <X className="mr-1.5 h-4 w-4" />
+                      Clear
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                  const incoming = Array.from(e.target.files ?? []).filter((f) => f.type.startsWith("image/"));
+                  if (incoming.length) setPendingPhotoFiles((prev) => [...prev, ...incoming]);
+                  e.currentTarget.value = "";
+                }}
+              />
+            </div>
+            <CameraPhotoInput
+              ref={cameraRef}
+              previewUrl={null}
+              onCapture={(f) => {
+                if (f) setPendingPhotoFiles((prev) => [...prev, f]);
+              }}
+              hideDefaultTrigger
+            />
           </div>
         </div>
         <div className="mt-4 flex shrink-0 justify-end gap-2 border-t border-secondary-100 pt-4">
@@ -221,6 +286,18 @@ export function RaiseTicketDialog({
           </Button>
         </div>
       </form>
+
+      <AttachmentListDialog
+        open={attachmentsOpen}
+        onClose={() => setAttachmentsOpen(false)}
+        urls={[]}
+        urlsToDelete={[]}
+        pendingFiles={pendingPhotoFiles}
+        onRemoveUrl={() => {}}
+        onRemovePending={(idx) => setPendingPhotoFiles((prev) => prev.filter((_, i) => i !== idx))}
+        isEditing={false}
+        title="Ticket photo attachments"
+      />
     </Dialog>
   );
 }

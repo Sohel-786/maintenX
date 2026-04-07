@@ -89,6 +89,7 @@ namespace net_backend.Models
     public class ComplaintCategory
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public int LocationId { get; set; }
         [Required]
         [MaxLength(120)]
@@ -96,6 +97,9 @@ namespace net_backend.Models
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+        [ForeignKey("CompanyId")]
+        public virtual Company? Company { get; set; }
 
         [ForeignKey("LocationId")]
         public virtual Location? Location { get; set; }
@@ -105,6 +109,7 @@ namespace net_backend.Models
     public class FacilityDepartment
     {
         public int Id { get; set; }
+        public int CompanyId { get; set; }
         public int LocationId { get; set; }
         [Required]
         [MaxLength(120)]
@@ -112,6 +117,9 @@ namespace net_backend.Models
         public bool IsActive { get; set; } = true;
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+        [ForeignKey("CompanyId")]
+        public virtual Company? Company { get; set; }
 
         [ForeignKey("LocationId")]
         public virtual Location? Location { get; set; }
@@ -131,7 +139,7 @@ namespace net_backend.Models
         public string Description { get; set; } = string.Empty;
         public int LocationId { get; set; }
         public int CategoryId { get; set; }
-        public int? DepartmentId { get; set; }
+        public int DepartmentId { get; set; }
         public ComplaintPriority Priority { get; set; } = ComplaintPriority.Medium;
         public ComplaintStatus Status { get; set; } = ComplaintStatus.Open;
         public int? AssignedHandlerUserId { get; set; }

@@ -104,8 +104,74 @@ input:-internal-autofill-selected {
   -webkit-box-shadow: inset 0 0 0 1000px var(--background) !important;
 }
 
-/* Production hardening: many screens still use legacy Tailwind `bg-white`.
-   In dark mode, treat it as `card` so pages don’t stay white. */
+/* ============================================================
+   Force-light: elements that must stay light even in dark mode
+   (e.g. Login page). Resets ALL CSS-var tokens + color-scheme.
+   ============================================================ */
+.force-light-theme {
+  color-scheme: light !important;
+  /* Reset every token to its light-mode value */
+  --background: #f8f9fa;
+  --foreground: #0d1117;
+  --card: #ffffff;
+  --card-foreground: #0d1117;
+  --popover: #ffffff;
+  --popover-foreground: #0d1117;
+  --muted: #f1f3f5;
+  --muted-foreground: #6c757d;
+  --accent: #e9ecef;
+  --accent-foreground: #0d6efd;
+  --border: #dee2e6;
+  --input: #ffffff;
+  --ring: #0d6efd;
+  --secondary: #6c757d;
+  --secondary-50: #f8f9fa;
+  --secondary-100: #e9ecef;
+  --secondary-200: #dee2e6;
+  --secondary-300: #ced4da;
+  --secondary-400: #adb5bd;
+  --secondary-500: #6c757d;
+  --secondary-600: #495057;
+  --secondary-700: #343a40;
+  --secondary-800: #212529;
+  --secondary-900: #0d1117;
+  --text: #000000;
+  background-color: #f8f9fa;
+  color: #0d1117;
+}
+
+/* Force ALL inputs inside a force-light-theme wrapper to show white bg.
+   Also neutralises the autofill shadow that uses var(--background). */
+.force-light-theme input {
+  background-color: #ffffff !important;
+  color: #0d1117 !important;
+  border-color: #dee2e6 !important;
+}
+.force-light-theme input:-webkit-autofill,
+.force-light-theme input:-webkit-autofill:hover,
+.force-light-theme input:-webkit-autofill:focus,
+.force-light-theme input:-webkit-autofill:active {
+  -webkit-text-fill-color: #0d1117 !important;
+  box-shadow: inset 0 0 0 1000px #ffffff !important;
+  -webkit-box-shadow: inset 0 0 0 1000px #ffffff !important;
+  caret-color: #0d1117 !important;
+}
+
+/* Utility class overrides inside force-light-theme */
+.force-light-theme .bg-white,
+.force-light-theme .bg-background,
+.force-light-theme .bg-input { background-color: #ffffff !important; }
+
+.force-light-theme .text-foreground { color: #0d1117 !important; }
+.force-light-theme .text-gray-700   { color: #374151 !important; }
+.force-light-theme .text-secondary-400,
+.force-light-theme .placeholder\:text-muted-foreground::placeholder { color: #adb5bd !important; }
+
+.force-light-theme .border-input,
+.force-light-theme .border-secondary-200 { border-color: #dee2e6 !important; }
+
+/* Production hardening: many screens still use legacy Tailwind bg-white.
+   In dark mode, treat it as card so pages don't stay white. */
 .dark .bg-white {
   background-color: var(--card) !important;
 }

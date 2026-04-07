@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
-import { ComplaintCategory, ComplaintListItem, ComplaintPriority, ComplaintStatus } from "@/types";
+import { ComplaintCategory, ComplaintListItem, ComplaintStatus } from "@/types";
 import { useCurrentUserPermissions } from "@/hooks/use-settings";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { Input } from "@/components/ui/input";
@@ -49,7 +49,6 @@ export function MxTicketsPage({
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 400);
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [priorityFilter, setPriorityFilter] = useState<ComplaintPriority | "">("");
   const [localStatus, setLocalStatus] = useState<ComplaintStatus | "">(
     () => lockStatus ?? (urlStatus || statusFilter),
   );
@@ -66,7 +65,7 @@ export function MxTicketsPage({
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, categoryId, priorityFilter, effectiveStatus, pageSize]);
+  }, [debouncedSearch, categoryId, effectiveStatus, pageSize]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["complaint-categories"],
@@ -84,7 +83,6 @@ export function MxTicketsPage({
       debouncedSearch,
       effectiveStatus,
       categoryId,
-      priorityFilter,
       page,
       pageSize,
     ],
@@ -94,7 +92,6 @@ export function MxTicketsPage({
           search: debouncedSearch.trim() || undefined,
           status: effectiveStatus || undefined,
           categoryId: categoryId === "" ? undefined : categoryId,
-          priority: priorityFilter === "" ? undefined : priorityFilter,
           page,
           pageSize,
         },
@@ -117,10 +114,9 @@ export function MxTicketsPage({
   const hasActiveFilters =
     searchInput.trim() !== "" ||
     categoryId !== "" ||
-    priorityFilter !== "" ||
     (!lockStatus && localStatus !== "");
 
-  const colCount = (showCompanyColumn ? 1 : 0) + 9;
+  const colCount = (showCompanyColumn ? 1 : 0) + 7;
 
   return (
     <div className="p-6">
@@ -146,13 +142,12 @@ export function MxTicketsPage({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
               <Input
-                placeholder="Ticket no, title, description…"
+                placeholder="Ticket no, description…"
                 className="h-10 border-secondary-200 pl-9 text-sm focus:ring-primary-500"
                 value={searchInput}
                 onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
-            <p className="mt-1 text-[10px] text-muted-foreground">Search applies after you pause typing.</p>
           </div>
           <div className="w-full flex-col sm:w-44">
             <label className={filterLabelClass}>Category</label>
@@ -165,21 +160,6 @@ export function MxTicketsPage({
               {categories.map((c) => (
                 <option key={c.id} value={c.id} disabled={!c.isActive}>
                   {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="w-full flex-col sm:w-40">
-            <label className={filterLabelClass}>Priority</label>
-            <select
-              className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
-              value={priorityFilter}
-              onChange={(e) => setPriorityFilter((e.target.value || "") as ComplaintPriority | "")}
-            >
-              <option value="">All</option>
-              {Object.values(ComplaintPriority).map((p) => (
-                <option key={p} value={p}>
-                  {p}
                 </option>
               ))}
             </select>
@@ -214,7 +194,6 @@ export function MxTicketsPage({
               onClick={() => {
                 setSearchInput("");
                 setCategoryId("");
-                setPriorityFilter("");
                 if (!lockStatus) setLocalStatus("");
                 setPage(1);
               }}
@@ -236,11 +215,9 @@ export function MxTicketsPage({
               <tr className="border-b border-primary-200 bg-primary-100 text-primary-900 dark:border-primary-800 dark:bg-primary-900/40 dark:text-primary-200">
                 <th className="w-14 border-r border-primary-200/50 px-4 py-3 text-center font-semibold">Sr.</th>
                 <th className="px-4 py-3 font-semibold">Ticket</th>
-                <th className="px-4 py-3 font-semibold">Title</th>
                 {showCompanyColumn && <th className="px-4 py-3 font-semibold">Company</th>}
                 <th className="px-4 py-3 font-semibold">Category</th>
                 <th className="px-4 py-3 font-semibold">Dept</th>
-                <th className="px-4 py-3 font-semibold">Priority</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Handler</th>
                 <th className="px-4 py-3 font-semibold">Updated</th>
@@ -273,15 +250,9 @@ export function MxTicketsPage({
                       {totalCount - (page - 1) * pageSize - idx}
                     </td>
                     <td className="px-4 py-3 font-mono text-xs font-semibold">{r.complaintNo}</td>
-                    <td className="px-4 py-3 font-semibold text-secondary-900">{r.title}</td>
                     {showCompanyColumn && <td className="px-4 py-3">{r.companyName ?? "—"}</td>}
                     <td className="px-4 py-3">{r.categoryName ?? "—"}</td>
                     <td className="px-4 py-3">{r.departmentName ?? "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className="mx-priority" data-priority={r.priority}>
-                        {r.priority}
-                      </span>
-                    </td>
                     <td className="px-4 py-3">
                       <span className="mx-badge-status" data-status={r.status}>
                         {r.status}

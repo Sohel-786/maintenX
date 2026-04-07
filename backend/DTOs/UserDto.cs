@@ -8,8 +8,8 @@ namespace net_backend.DTOs
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = "EMPLOYEE";
         public bool IsActive { get; set; } = true;
-        public string? Avatar { get; set; }
         public string? MobileNumber { get; set; }
+        public string? ProfileDepartment { get; set; }
         public int? CreatedBy { get; set; }
         /// <summary>Company for the user's initial access (required at creation).</summary>
         public int CompanyId { get; set; }
@@ -32,8 +32,8 @@ namespace net_backend.DTOs
         public string? Role { get; set; }
         public bool? IsActive { get; set; }
         public string? Password { get; set; }
-        public string? Avatar { get; set; }
         public string? MobileNumber { get; set; }
+        public string? ProfileDepartment { get; set; }
         /// <summary>Default company for the user (optional on update).</summary>
         public int? CompanyId { get; set; }
         /// <summary>Default location for the user; must belong to CompanyId (optional on update).</summary>

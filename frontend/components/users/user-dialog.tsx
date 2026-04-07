@@ -17,8 +17,7 @@ import { Select } from "@/components/ui/select";
 const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
   password: z.string().optional(),
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
+  name: z.string().trim().min(1, "Name is required"),
   role: z.nativeEnum(Role),
   isActive: z.boolean().default(true),
   mobileNumber: z.string().optional().nullable(),
@@ -79,8 +78,7 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
       const locationIdVal = (user as any).defaultLocationId ?? user.locationId ?? undefined;
       reset({
         username: user.username,
-        firstName: user.firstName,
-        lastName: user.lastName,
+        name: `${user.firstName} ${user.lastName}`.trim(),
         role: user.role,
         isActive: user.isActive,
         mobileNumber: user.mobileNumber || "",
@@ -92,8 +90,7 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
       reset({
         username: "",
         password: "",
-        firstName: "",
-        lastName: "",
+        name: "",
         role: Role.EMPLOYEE,
         isActive: true,
         mobileNumber: "",
@@ -104,14 +101,18 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
   }, [isOpen, user, reset]);
 
   const onSubmit = (data: UserFormValues) => {
+    const normalized = data.name?.trim() || "";
+    const parts = normalized.split(/\s+/).filter(Boolean);
+    const firstName = parts[0] ?? "";
+    const lastName = parts.length > 1 ? parts.slice(1).join(" ") : firstName;
     if (user) {
       updateUser.mutate(
         {
           id: user.id,
           data: {
             username: data.username,
-            firstName: data.firstName,
-            lastName: data.lastName,
+            firstName,
+            lastName,
             role: data.role,
             isActive: data.isActive,
             mobileNumber: data.mobileNumber || null,
@@ -129,8 +130,8 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
         {
           username: data.username,
           password: data.password,
-          firstName: data.firstName,
-          lastName: data.lastName,
+          firstName,
+          lastName,
           role: data.role,
           isActive: data.isActive ?? true,
           mobileNumber: data.mobileNumber || null,
@@ -152,17 +153,12 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
       size="lg"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-secondary-500 uppercase tracking-wider">First Name <span className="text-red-500">*</span></Label>
-            <Input {...register("firstName")} className="h-11 border-secondary-300" placeholder="First name" />
-            {errors.firstName && <p className="text-xs text-rose-500">{errors.firstName.message}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label className="text-xs font-bold text-secondary-500 uppercase tracking-wider">Last Name <span className="text-red-500">*</span></Label>
-            <Input {...register("lastName")} className="h-11 border-secondary-300" placeholder="Last name" />
-            {errors.lastName && <p className="text-xs text-rose-500">{errors.lastName.message}</p>}
-          </div>
+        <div className="space-y-2">
+          <Label className="text-xs font-bold text-secondary-500 uppercase tracking-wider">
+            Name <span className="text-red-500">*</span>
+          </Label>
+          <Input {...register("name")} className="h-11 border-secondary-300" placeholder="Full name" />
+          {errors.name && <p className="text-xs text-rose-500">{errors.name.message}</p>}
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
@@ -171,7 +167,7 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
             {errors.username && <p className="text-xs text-rose-500">{errors.username.message}</p>}
           </div>
           <div className="space-y-2">
-            <Label className="text-xs font-bold text-secondary-500 uppercase tracking-wider">Password {user ? "(leave blank to keep)" : "*"}</Label>
+            <Label className="text-xs font-bold text-secondary-500 uppercase tracking-wider">Password {user ? "" : "*"}</Label>
             <Input type="password" {...register("password")} className="h-11 border-secondary-300" placeholder={user ? "••••••••" : "Password"} />
             {errors.password && <p className="text-xs text-rose-500">{errors.password.message}</p>}
           </div>

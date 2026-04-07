@@ -20,6 +20,7 @@ import { PageSizeSelect } from "@/components/ui/page-size-select"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { PAGINATION_VISIBLE_THRESHOLD } from "@/lib/pagination"
 import { X } from "lucide-react"
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 const filterLabelClass = "text-[11px] font-medium text-secondary-500 uppercase tracking-wider mb-1 block";
 
@@ -37,7 +38,8 @@ export default function LocationsPage() {
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedItem, setSelectedItem] = useState<Location | null>(null);
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -180,8 +182,8 @@ export default function LocationsPage() {
               <Input
                 placeholder="Search by location or company..."
                 className="pl-9 h-10 border-secondary-200 focus:ring-primary-500 text-sm"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
           </div>
@@ -199,6 +201,7 @@ export default function LocationsPage() {
               </select>
             </div>
             <div className="w-20 shrink-0 max-w-[5.5rem]">
+              <label className={filterLabelClass}>Rows</label>
               <PageSizeSelect value={pageSize} onChange={(v) => { setPageSize(v); setPage(1); }} />
             </div>
             {hasActiveFilters && (
@@ -208,7 +211,7 @@ export default function LocationsPage() {
                   type="button"
                   variant="outline"
                   size="sm"
-                  onClick={() => { setSearch(""); setActiveFilter("all"); setPage(1); }}
+                  onClick={() => { setSearchInput(""); setActiveFilter("all"); setPage(1); }}
                   className="h-10 px-4 text-xs font-medium rounded-lg whitespace-nowrap border-secondary-300 text-secondary-700 hover:bg-secondary-50 hover:border-secondary-400"
                 >
                   <X className="h-3.5 w-3.5 mr-1.5 shrink-0" />

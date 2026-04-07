@@ -29,6 +29,7 @@ const LOCATION_SCOPED_QUERY_KEYS: readonly string[] = [
 
 function checkRouteAccess(pathname: string, permissions: UserPermission, user: User): boolean {
   if (pathname.startsWith('/complaints/raise')) return permissions.raiseComplaint;
+  if (pathname.startsWith('/users')) return permissions.accessSettings;
   if (pathname.startsWith('/all-tickets')) {
     return !!(
       permissions.viewComplaints &&
@@ -50,7 +51,6 @@ function checkRouteAccess(pathname: string, permissions: UserPermission, user: U
       { route: "/companies", key: "manageCompany" },
       { route: "/locations", key: "manageLocation" },
       { route: "/settings", key: "accessSettings" },
-      { route: "/users", key: "accessSettings" },
     ] as const satisfies readonly { route: string; key: keyof UserPermission }[]
   )
     .slice()
@@ -95,7 +95,6 @@ const ROUTE_LABELS: Record<string, string> = {
   '/companies': 'Companies',
   '/locations': 'Locations',
   '/settings': 'Settings',
-  '/users': 'Users',
 };
 
 export function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -363,24 +362,17 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
           <main
             className={cn(
               "flex flex-1 flex-col",
-              isFixedLayout ? "min-h-0 overflow-y-auto" : "overflow-visible min-h-0",
+              "min-h-0 overflow-visible",
             )}
           >
             {children}
           </main>
         </MxAppChrome>
       ) : (
-        <div className="min-h-screen bg-background">
+        <div className="flex h-screen flex-col overflow-hidden bg-background">
           <Header user={user} isNavExpanded={navExpanded} onNavExpandChange={setNavExpanded} />
           <HorizontalNav isExpanded={navExpanded} />
-          <main
-            className={cn(
-              "flex flex-1 flex-col",
-              isFixedLayout ? "min-h-0 overflow-y-auto" : "overflow-visible",
-            )}
-          >
-            {children}
-          </main>
+          <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
         </div>
       )}
     </SoftwareProfileDraftProvider>

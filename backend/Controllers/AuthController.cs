@@ -71,7 +71,6 @@ namespace net_backend.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Role = user.Role.ToString(),
-                    Avatar = user.Avatar,
                     ProfileDepartment = user.ProfileDepartment
                 },
                 AllowedLocationAccess = allowedAccess
@@ -113,7 +112,6 @@ namespace net_backend.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Role = user.Role.ToString(),
-                    Avatar = user.Avatar,
                     ProfileDepartment = user.ProfileDepartment
                 },
                 allowedLocationAccess = allowedAccess

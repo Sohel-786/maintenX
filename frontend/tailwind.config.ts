@@ -62,6 +62,10 @@ const config: Config = {
         },
         input: 'var(--input)',
         ring: 'var(--ring)',
+        destructive: {
+          DEFAULT: '#dc2626',
+          foreground: '#ffffff',
+        },
       },
       animation: {
         'fade-in': 'fadeIn 0.3s ease-in-out',

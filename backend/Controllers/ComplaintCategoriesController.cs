@@ -28,11 +28,12 @@ namespace net_backend.Controllers
             [FromQuery] int pageSize = 25)
         {
             if (!await HasPermission("ViewComplaints")) return Forbidden();
-            var locationId = await GetCurrentLocationIdAsync();
+            var companyId = await GetCurrentCompanyIdAsync();
+            var locationId = await GetCurrentLocationIdAsync(); // still used for writes / legacy FK
 
             IQueryable<ComplaintCategory> q = _context.ComplaintCategories.AsNoTracking()
                 .Include(c => c.Location)
-                .Where(c => c.LocationId == locationId);
+                .Where(c => c.CompanyId == companyId);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -60,8 +61,6 @@ namespace net_backend.Controllers
                     .Select(c => new ComplaintCategoryDto
                     {
                         Id = c.Id,
-                        LocationId = c.LocationId,
-                        LocationName = c.Location != null ? c.Location.Name : null,
                         Name = c.Name,
                         IsActive = c.IsActive
                     })
@@ -78,8 +77,6 @@ namespace net_backend.Controllers
                 .Select(c => new ComplaintCategoryDto
                 {
                     Id = c.Id,
-                    LocationId = c.LocationId,
-                    LocationName = c.Location != null ? c.Location.Name : null,
                     Name = c.Name,
                     IsActive = c.IsActive
                 })
@@ -91,15 +88,17 @@ namespace net_backend.Controllers
         public async Task<ActionResult<ApiResponse<ComplaintCategoryDto>>> Create([FromBody] CreateComplaintCategoryRequest request)
         {
             if (!await HasPermission("ManageCategories")) return Forbidden();
-            var locationId = await GetCurrentLocationIdAsync();
+            var companyId = await GetCurrentCompanyIdAsync();
+            var locationId = await GetCurrentLocationIdAsync(); // stored for legacy FK, but category is company-scoped
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new ApiResponse<ComplaintCategoryDto> { Success = false, Message = "Name is required." });
             var name = request.Name.Trim();
-            if (await _context.ComplaintCategories.AnyAsync(c => c.LocationId == locationId && c.Name.ToLower() == name.ToLower()))
+            if (await _context.ComplaintCategories.AnyAsync(c => c.CompanyId == companyId && c.Name.ToLower() == name.ToLower()))
                 return Conflict(new ApiResponse<ComplaintCategoryDto> { Success = false, Message = "Category already exists." });
 
             var cat = new ComplaintCategory
             {
+                CompanyId = companyId,
                 LocationId = locationId,
                 Name = name,
                 IsActive = true,
@@ -115,8 +114,6 @@ namespace net_backend.Controllers
                 Data = new ComplaintCategoryDto
                 {
                     Id = cat.Id,
-                    LocationId = cat.LocationId,
-                    LocationName = loc?.Name,
                     Name = cat.Name,
                     IsActive = cat.IsActive
                 }
@@ -127,13 +124,14 @@ namespace net_backend.Controllers
         public async Task<ActionResult<ApiResponse<ComplaintCategoryDto>>> Update(int id, [FromBody] CreateComplaintCategoryRequest request)
         {
             if (!await HasPermission("ManageCategories")) return Forbidden();
+            var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
-            var cat = await _context.ComplaintCategories.FirstOrDefaultAsync(c => c.Id == id && c.LocationId == locationId);
+            var cat = await _context.ComplaintCategories.FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);
             if (cat == null) return NotFound();
             if (!string.IsNullOrWhiteSpace(request.Name))
             {
                 var name = request.Name.Trim();
-                if (await _context.ComplaintCategories.AnyAsync(c => c.LocationId == locationId && c.Id != id && c.Name.ToLower() == name.ToLower()))
+                if (await _context.ComplaintCategories.AnyAsync(c => c.CompanyId == companyId && c.Id != id && c.Name.ToLower() == name.ToLower()))
                     return Conflict(new ApiResponse<ComplaintCategoryDto> { Success = false, Message = "Another category with this name already exists." });
                 cat.Name = name;
             }
@@ -145,8 +143,6 @@ namespace net_backend.Controllers
                 Data = new ComplaintCategoryDto
                 {
                     Id = cat.Id,
-                    LocationId = cat.LocationId,
-                    LocationName = loc?.Name,
                     Name = cat.Name,
                     IsActive = cat.IsActive
                 }
@@ -157,9 +153,28 @@ namespace net_backend.Controllers
         public async Task<ActionResult<ApiResponse<ComplaintCategoryDto>>> ToggleActive(int id)
         {
             if (!await HasPermission("ManageCategories")) return Forbidden();
+            var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
-            var cat = await _context.ComplaintCategories.FirstOrDefaultAsync(c => c.Id == id && c.LocationId == locationId);
+            var cat = await _context.ComplaintCategories.FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);
             if (cat == null) return NotFound();
+
+            // Company-scoped master: don't allow inactivating if used by any active ticket in this company.
+            if (cat.IsActive)
+            {
+                var companyLocationIds = await _context.Locations
+                    .Where(l => l.CompanyId == companyId)
+                    .Select(l => l.Id)
+                    .ToListAsync();
+
+                var hasActiveTickets = await _context.Complaints.AnyAsync(c =>
+                    companyLocationIds.Contains(c.LocationId) &&
+                    c.CategoryId == id &&
+                    c.Status != ComplaintStatus.Done);
+
+                if (hasActiveTickets)
+                    return BadRequest(new ApiResponse<ComplaintCategoryDto> { Success = false, Message = "Cannot inactivate: this category is used by active tickets." });
+            }
+
             cat.IsActive = !cat.IsActive;
             cat.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
@@ -169,8 +184,6 @@ namespace net_backend.Controllers
                 Data = new ComplaintCategoryDto
                 {
                     Id = cat.Id,
-                    LocationId = cat.LocationId,
-                    LocationName = loc?.Name,
                     Name = cat.Name,
                     IsActive = cat.IsActive
                 }

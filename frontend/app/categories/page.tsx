@@ -16,6 +16,7 @@ import { PageSizeSelect } from "@/components/ui/page-size-select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { PAGINATION_VISIBLE_THRESHOLD } from "@/lib/pagination";
 import { Label } from "@/components/ui/label";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
 const filterLabelClass = "text-[11px] font-medium text-secondary-500 uppercase tracking-wider mb-1 block";
 
@@ -32,7 +33,8 @@ export default function CategoriesPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<ComplaintCategory | null>(null);
   const [nameDraft, setNameDraft] = useState("");
-  const [search, setSearch] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const search = useDebouncedValue(searchInput, 400);
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -145,8 +147,8 @@ export default function CategoriesPage() {
               <Input
                 placeholder="Search by name…"
                 className="h-10 border-secondary-200 pl-9 text-sm focus:ring-primary-500"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
+                value={searchInput}
+                onChange={(e) => setSearchInput(e.target.value)}
               />
             </div>
           </div>
@@ -163,6 +165,7 @@ export default function CategoriesPage() {
             </select>
           </div>
           <div className="w-20 max-w-[5.5rem] shrink-0">
+            <label className={filterLabelClass}>Rows</label>
             <PageSizeSelect value={pageSize} onChange={(v) => { setPageSize(v); setPage(1); }} />
           </div>
           {hasActiveFilters && (
@@ -171,7 +174,7 @@ export default function CategoriesPage() {
               variant="outline"
               size="sm"
               className="h-10"
-              onClick={() => { setSearch(""); setActiveFilter("all"); setPage(1); }}
+              onClick={() => { setSearchInput(""); setActiveFilter("all"); setPage(1); }}
             >
               <X className="mr-1.5 h-3.5 w-3.5" />
               Clear
@@ -190,7 +193,6 @@ export default function CategoriesPage() {
               <tr className="border-b border-primary-200 bg-primary-100 text-primary-900 dark:border-primary-800 dark:bg-primary-900/40 dark:text-primary-200">
                 <th className="w-16 border-r border-primary-200/50 px-4 py-3 text-center font-semibold">Sr.</th>
                 <th className="px-4 py-3 font-semibold">Name</th>
-                <th className="px-4 py-3 font-semibold">Location</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 text-right font-semibold">Actions</th>
               </tr>
@@ -198,7 +200,7 @@ export default function CategoriesPage() {
             <tbody>
               {isLoading ? (
                 <tr>
-                  <td colSpan={5} className="h-48 text-center">
+                  <td colSpan={4} className="h-48 text-center">
                     <div className="flex flex-col items-center justify-center gap-2">
                       <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600" />
                       <span className="text-xs uppercase tracking-widest text-secondary-400">Loading…</span>
@@ -210,7 +212,6 @@ export default function CategoriesPage() {
                   <tr key={c.id} className="border-b border-secondary-100 transition-colors hover:bg-primary-50/30">
                     <td className="px-4 py-3 text-center text-secondary-500">{totalCount - (page - 1) * pageSize - idx}</td>
                     <td className="px-4 py-3 font-semibold text-secondary-900">{c.name}</td>
-                    <td className="px-4 py-3 text-secondary-700">{c.locationName ?? "—"}</td>
                     <td className="px-4 py-3">
                       <span
                         className={`inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${
@@ -246,7 +247,7 @@ export default function CategoriesPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={5} className="py-12 text-center italic text-secondary-500">
+                  <td colSpan={4} className="py-12 text-center italic text-secondary-500">
                     No categories match your filters.
                   </td>
                 </tr>
@@ -265,7 +266,15 @@ export default function CategoriesPage() {
         title={editItem ? "Edit category" : "Add category"}
         size="sm"
       >
-        <div className="space-y-4 p-1">
+        <form
+          className="space-y-4 p-1"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!nameDraft.trim() || createMut.isPending || updateMut.isPending) return;
+            if (editItem) updateMut.mutate({ id: editItem.id, name: nameDraft });
+            else createMut.mutate(nameDraft);
+          }}
+        >
           <div>
             <Label htmlFor="cat-name">Name</Label>
             <Input
@@ -274,24 +283,25 @@ export default function CategoriesPage() {
               value={nameDraft}
               onChange={(e) => setNameDraft(e.target.value)}
               placeholder="e.g. Electrical, HVAC"
+              autoFocus
             />
+            {!nameDraft.trim() && (
+              <p className="mt-1 text-xs text-red-600 font-medium">Name is required</p>
+            )}
           </div>
           <div className="flex gap-2 pt-2">
             <Button
+              type="submit"
               className="flex-1"
               disabled={!nameDraft.trim() || createMut.isPending || updateMut.isPending}
-              onClick={() => {
-                if (editItem) updateMut.mutate({ id: editItem.id, name: nameDraft });
-                else createMut.mutate(nameDraft);
-              }}
             >
               Save
             </Button>
-            <Button variant="outline" className="flex-1" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" type="button" className="flex-1" onClick={() => setDialogOpen(false)}>
               Cancel
             </Button>
           </div>
-        </div>
+        </form>
       </Dialog>
 
       <Dialog isOpen={!!inactiveTarget} onClose={() => setInactiveTarget(null)} title="Deactivate category" size="sm">

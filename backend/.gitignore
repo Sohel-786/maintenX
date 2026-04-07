@@ -2,6 +2,9 @@
 bin/
 obj/
 
+# Accidental temp output folder (PowerShell doesn't expand %TEMP%)
+%TEMP%/
+
 # IDE
 .vs/
 .vscode/

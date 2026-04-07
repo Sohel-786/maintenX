@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { User } from '@/types';
-import { getAvatarUrl } from '@/lib/avatar-options';
 
 interface AvatarProps {
   user: User;
@@ -45,28 +44,15 @@ export function Avatar({ user, size = 'md', showName = false }: AvatarProps) {
     return colors[index % colors.length];
   };
 
-  // Preset avatars from /avatar/, legacy from /assets/avatar/, or fallback
-  const avatarUrl = getAvatarUrl(user.avatar);
-  const [imageError, setImageError] = React.useState(false);
-
   return (
     <div className="flex items-center space-x-3">
       <div className="relative">
         <div
           className={`${sizeClasses[size]} rounded-full overflow-hidden shadow-md ring-2 ring-white ${
-            imageError ? getBackgroundColor() : ''
-          } flex items-center justify-center ${imageError ? 'text-white font-semibold' : ''}`}
+            getBackgroundColor()
+          } flex items-center justify-center text-white font-semibold`}
         >
-          {!imageError ? (
-            <img
-              src={avatarUrl}
-              alt={`${user.firstName} ${user.lastName}`}
-              className="w-full h-full object-cover"
-              onError={() => setImageError(true)}
-            />
-          ) : (
-            <span>{getInitials()}</span>
-          )}
+          <span>{getInitials()}</span>
         </div>
       </div>
       {showName && (

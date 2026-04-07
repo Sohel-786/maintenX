@@ -184,7 +184,7 @@ namespace net_backend.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("DepartmentId")
+                    b.Property<int>("DepartmentId")
                         .HasColumnType("int");
 
                     b.Property<string>("Description")
@@ -238,6 +238,9 @@ namespace net_backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -257,7 +260,9 @@ namespace net_backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId", "Name")
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CompanyId", "Name")
                         .IsUnique();
 
                     b.ToTable("mx_ticket_categories");
@@ -308,6 +313,9 @@ namespace net_backend.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CompanyId")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -327,7 +335,9 @@ namespace net_backend.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("LocationId", "Name")
+                    b.HasIndex("CompanyId");
+
+                    b.HasIndex("CompanyId", "Name")
                         .IsUnique();
 
                     b.ToTable("mx_facility_departments");
@@ -599,11 +609,19 @@ namespace net_backend.Migrations
 
             modelBuilder.Entity("net_backend.Models.ComplaintCategory", b =>
                 {
+                    b.HasOne("net_backend.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("net_backend.Models.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Company");
 
                     b.Navigation("Location");
                 });
@@ -629,11 +647,19 @@ namespace net_backend.Migrations
 
             modelBuilder.Entity("net_backend.Models.FacilityDepartment", b =>
                 {
+                    b.HasOne("net_backend.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("net_backend.Models.Location", "Location")
                         .WithMany()
                         .HasForeignKey("LocationId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Company");
 
                     b.Navigation("Location");
                 });

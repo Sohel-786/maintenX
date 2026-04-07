@@ -13,7 +13,6 @@ namespace net_backend.DTOs
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string Role { get; set; } = string.Empty;
-        public string? Avatar { get; set; }
         /// <summary>Display department for maintenance tickets (optional).</summary>
         public string? ProfileDepartment { get; set; }
     }

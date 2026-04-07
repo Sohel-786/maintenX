@@ -56,7 +56,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen h-dvh w-full flex items-center justify-center relative overflow-hidden">
+    <div className="min-h-screen h-dvh w-full flex items-center justify-center relative overflow-hidden force-light-theme">
       {/* Main background container - full viewport */}
       <div
         className="absolute top-0 left-0 right-0 bottom-0 w-full h-full pointer-events-none"

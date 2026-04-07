@@ -24,11 +24,12 @@ namespace net_backend.Controllers
             [FromQuery] int pageSize = 25)
         {
             if (!await HasPermission("ViewComplaints")) return Forbidden();
-            var locationId = await GetCurrentLocationIdAsync();
+            var companyId = await GetCurrentCompanyIdAsync();
+            var locationId = await GetCurrentLocationIdAsync(); // still used for writes / legacy FK
 
             IQueryable<FacilityDepartment> q = _context.FacilityDepartments.AsNoTracking()
                 .Include(d => d.Location)
-                .Where(d => d.LocationId == locationId);
+                .Where(d => d.CompanyId == companyId);
 
             if (!string.IsNullOrWhiteSpace(search))
             {
@@ -56,8 +57,6 @@ namespace net_backend.Controllers
                     .Select(d => new FacilityDepartmentDto
                     {
                         Id = d.Id,
-                        LocationId = d.LocationId,
-                        LocationName = d.Location != null ? d.Location.Name : null,
                         Name = d.Name,
                         IsActive = d.IsActive
                     })
@@ -74,8 +73,6 @@ namespace net_backend.Controllers
                 .Select(d => new FacilityDepartmentDto
                 {
                     Id = d.Id,
-                    LocationId = d.LocationId,
-                    LocationName = d.Location != null ? d.Location.Name : null,
                     Name = d.Name,
                     IsActive = d.IsActive
                 })
@@ -87,15 +84,17 @@ namespace net_backend.Controllers
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Create([FromBody] CreateFacilityDepartmentRequest request)
         {
             if (!await HasPermission("ManageCategories")) return Forbidden();
-            var locationId = await GetCurrentLocationIdAsync();
+            var companyId = await GetCurrentCompanyIdAsync();
+            var locationId = await GetCurrentLocationIdAsync(); // stored for legacy FK, but dept is company-scoped
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Name is required." });
             var name = request.Name.Trim();
-            if (await _context.FacilityDepartments.AnyAsync(d => d.LocationId == locationId && d.Name.ToLower() == name.ToLower()))
+            if (await _context.FacilityDepartments.AnyAsync(d => d.CompanyId == companyId && d.Name.ToLower() == name.ToLower()))
                 return Conflict(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Department already exists." });
 
             var d = new FacilityDepartment
             {
+                CompanyId = companyId,
                 LocationId = locationId,
                 Name = name,
                 IsActive = true,
@@ -110,8 +109,6 @@ namespace net_backend.Controllers
                 Data = new FacilityDepartmentDto
                 {
                     Id = d.Id,
-                    LocationId = d.LocationId,
-                    LocationName = loc?.Name,
                     Name = d.Name,
                     IsActive = d.IsActive
                 }
@@ -122,13 +119,14 @@ namespace net_backend.Controllers
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Update(int id, [FromBody] UpdateFacilityDepartmentRequest request)
         {
             if (!await HasPermission("ManageCategories")) return Forbidden();
+            var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
-            var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.LocationId == locationId);
+            var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
             if (d == null) return NotFound();
             if (string.IsNullOrWhiteSpace(request.Name))
                 return BadRequest(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Name is required." });
             var name = request.Name.Trim();
-            if (await _context.FacilityDepartments.AnyAsync(x => x.LocationId == locationId && x.Id != id && x.Name.ToLower() == name.ToLower()))
+            if (await _context.FacilityDepartments.AnyAsync(x => x.CompanyId == companyId && x.Id != id && x.Name.ToLower() == name.ToLower()))
                 return Conflict(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Another department with this name already exists." });
             d.Name = name;
             d.UpdatedAt = DateTime.Now;
@@ -139,8 +137,6 @@ namespace net_backend.Controllers
                 Data = new FacilityDepartmentDto
                 {
                     Id = d.Id,
-                    LocationId = d.LocationId,
-                    LocationName = loc?.Name,
                     Name = d.Name,
                     IsActive = d.IsActive
                 }
@@ -151,9 +147,28 @@ namespace net_backend.Controllers
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Toggle(int id)
         {
             if (!await HasPermission("ManageCategories")) return Forbidden();
+            var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
-            var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.LocationId == locationId);
+            var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
             if (d == null) return NotFound();
+
+            // Company-scoped master: don't allow inactivating if used by any active ticket in this company.
+            if (d.IsActive)
+            {
+                var companyLocationIds = await _context.Locations
+                    .Where(l => l.CompanyId == companyId)
+                    .Select(l => l.Id)
+                    .ToListAsync();
+
+                var hasActiveTickets = await _context.Complaints.AnyAsync(c =>
+                    companyLocationIds.Contains(c.LocationId) &&
+                    c.DepartmentId == id &&
+                    c.Status != ComplaintStatus.Done);
+
+                if (hasActiveTickets)
+                    return BadRequest(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Cannot inactivate: this department is used by active tickets." });
+            }
+
             d.IsActive = !d.IsActive;
             d.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
@@ -163,8 +178,6 @@ namespace net_backend.Controllers
                 Data = new FacilityDepartmentDto
                 {
                     Id = d.Id,
-                    LocationId = d.LocationId,
-                    LocationName = loc?.Name,
                     Name = d.Name,
                     IsActive = d.IsActive
                 }

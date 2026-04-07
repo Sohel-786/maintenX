@@ -6,16 +6,14 @@ namespace net_backend.DTOs
     {
         public int Id { get; set; }
         public string ComplaintNo { get; set; } = string.Empty;
-        public string Title { get; set; } = string.Empty;
         public string? DescriptionPreview { get; set; }
         public int LocationId { get; set; }
         public string? LocationName { get; set; }
         public string? CompanyName { get; set; }
         public int CategoryId { get; set; }
         public string? CategoryName { get; set; }
-        public int? DepartmentId { get; set; }
+        public int DepartmentId { get; set; }
         public string? DepartmentName { get; set; }
-        public ComplaintPriority Priority { get; set; }
         public ComplaintStatus Status { get; set; }
         public int? AssignedHandlerUserId { get; set; }
         public string? AssignedHandlerName { get; set; }
@@ -46,11 +44,9 @@ namespace net_backend.DTOs
 
     public class CreateComplaintRequest
     {
-        public string? Title { get; set; }
         public string Description { get; set; } = string.Empty;
         public int CategoryId { get; set; }
-        public int? DepartmentId { get; set; }
-        public ComplaintPriority Priority { get; set; } = ComplaintPriority.Medium;
+        public int DepartmentId { get; set; }
         public List<string>? ImageUrls { get; set; }
     }
 
@@ -70,8 +66,6 @@ namespace net_backend.DTOs
     public class ComplaintCategoryDto
     {
         public int Id { get; set; }
-        public int LocationId { get; set; }
-        public string? LocationName { get; set; }
         public string Name { get; set; } = string.Empty;
         public bool IsActive { get; set; }
     }
@@ -84,8 +78,6 @@ namespace net_backend.DTOs
     public class FacilityDepartmentDto
     {
         public int Id { get; set; }
-        public int LocationId { get; set; }
-        public string? LocationName { get; set; }
         public string Name { get; set; } = string.Empty;
         public bool IsActive { get; set; }
     }

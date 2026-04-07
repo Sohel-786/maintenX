@@ -30,7 +30,7 @@ namespace net_backend.Data
                 .IsUnique();
 
             modelBuilder.Entity<ComplaintCategory>()
-                .HasIndex(c => new { c.LocationId, c.Name })
+                .HasIndex(c => new { c.CompanyId, c.Name })
                 .IsUnique();
 
             modelBuilder.Entity<Location>()
@@ -50,7 +50,7 @@ namespace net_backend.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<FacilityDepartment>()
-                .HasIndex(d => new { d.LocationId, d.Name })
+                .HasIndex(d => new { d.CompanyId, d.Name })
                 .IsUnique();
             modelBuilder.Entity<FacilityDepartment>()
                 .HasOne(d => d.Location)
@@ -74,7 +74,7 @@ namespace net_backend.Data
                 .HasOne(c => c.Department)
                 .WithMany()
                 .HasForeignKey(c => c.DepartmentId)
-                .OnDelete(DeleteBehavior.SetNull);
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<Complaint>()
                 .HasOne(c => c.RaisedBy)

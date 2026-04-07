@@ -6,7 +6,6 @@ import api from "@/lib/api";
 import {
   ComplaintCategory,
   ComplaintListItem,
-  ComplaintPriority,
   Role,
 } from "@/types";
 import { useCurrentUserPermissions } from "@/hooks/use-settings";
@@ -34,13 +33,11 @@ export default function AssignWorkPage() {
   const [searchInputUn, setSearchInputUn] = useState("");
   const debouncedSearchUn = useDebouncedValue(searchInputUn, 400);
   const [categoryIdUn, setCategoryIdUn] = useState<number | "">("");
-  const [priorityFilterUn, setPriorityFilterUn] = useState<ComplaintPriority | "">("");
   const [pageUn, setPageUn] = useState(1);
 
   const [searchInputActive, setSearchInputActive] = useState("");
   const debouncedSearchActive = useDebouncedValue(searchInputActive, 400);
   const [categoryIdActive, setCategoryIdActive] = useState<number | "">("");
-  const [priorityFilterActive, setPriorityFilterActive] = useState<ComplaintPriority | "">("");
   const [pageActive, setPageActive] = useState(1);
 
   const [pageSizeUn, setPageSizeUn] = useState(25);
@@ -50,11 +47,11 @@ export default function AssignWorkPage() {
 
   useEffect(() => {
     setPageUn(1);
-  }, [debouncedSearchUn, categoryIdUn, priorityFilterUn, pageSizeUn]);
+  }, [debouncedSearchUn, categoryIdUn, pageSizeUn]);
 
   useEffect(() => {
     setPageActive(1);
-  }, [debouncedSearchActive, categoryIdActive, priorityFilterActive, pageSizeActive]);
+  }, [debouncedSearchActive, categoryIdActive, pageSizeActive]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["complaint-categories"],
@@ -80,7 +77,6 @@ export default function AssignWorkPage() {
     search: debouncedSearchUn.trim() || undefined,
     assignmentBucket: "unassigned",
     categoryId: categoryIdUn === "" ? undefined : categoryIdUn,
-    priority: priorityFilterUn === "" ? undefined : priorityFilterUn,
     page: pageUn,
     pageSize: pageSizeUn,
   };
@@ -89,7 +85,6 @@ export default function AssignWorkPage() {
     search: debouncedSearchActive.trim() || undefined,
     assignmentBucket: "activeReassign",
     categoryId: categoryIdActive === "" ? undefined : categoryIdActive,
-    priority: priorityFilterActive === "" ? undefined : priorityFilterActive,
     page: pageActive,
     pageSize: pageSizeActive,
   };
@@ -100,7 +95,6 @@ export default function AssignWorkPage() {
       "assign-unassigned",
       debouncedSearchUn,
       categoryIdUn,
-      priorityFilterUn,
       pageUn,
       pageSizeUn,
     ],
@@ -120,7 +114,6 @@ export default function AssignWorkPage() {
       "assign-active",
       debouncedSearchActive,
       categoryIdActive,
-      priorityFilterActive,
       pageActive,
       pageSizeActive,
     ],
@@ -162,10 +155,8 @@ export default function AssignWorkPage() {
   const activeRows = activeData?.rows ?? [];
   const activeTotal = activeData?.total ?? 0;
 
-  const hasUnFilters =
-    searchInputUn.trim() !== "" || categoryIdUn !== "" || priorityFilterUn !== "";
-  const hasActiveFilters =
-    searchInputActive.trim() !== "" || categoryIdActive !== "" || priorityFilterActive !== "";
+  const hasUnFilters = searchInputUn.trim() !== "" || categoryIdUn !== "";
+  const hasActiveFilters = searchInputActive.trim() !== "" || categoryIdActive !== "";
 
   const renderTable = (
     rows: ComplaintListItem[],
@@ -177,7 +168,7 @@ export default function AssignWorkPage() {
     showAssign: boolean,
     loading: boolean,
   ) => {
-    const colCount = showAssign ? 11 : 10;
+    const colCount = showAssign ? 9 : 8;
     return (
       <div className="table-container overflow-x-auto">
         <table className="w-full min-w-[880px] whitespace-nowrap text-left text-sm">
@@ -185,10 +176,8 @@ export default function AssignWorkPage() {
             <tr className="border-b border-primary-200 bg-primary-100 text-primary-900 dark:border-primary-800 dark:bg-primary-900/40 dark:text-primary-200">
               <th className="w-14 border-r border-primary-200/50 px-4 py-3 text-center font-semibold">Sr.</th>
               <th className="px-4 py-3 font-semibold">Ticket</th>
-              <th className="px-4 py-3 font-semibold">Title</th>
               <th className="px-4 py-3 font-semibold">Category</th>
               <th className="px-4 py-3 font-semibold">Dept</th>
-              <th className="px-4 py-3 font-semibold">Priority</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Handler</th>
               {showAssign && <th className="min-w-[200px] px-4 py-3 font-semibold">Assign / reassign</th>}
@@ -222,14 +211,8 @@ export default function AssignWorkPage() {
                     {total - (page - 1) * pageSize - idx}
                   </td>
                   <td className="px-4 py-3 font-mono text-xs font-semibold">{r.complaintNo}</td>
-                  <td className="px-4 py-3 font-semibold text-secondary-900">{r.title}</td>
                   <td className="px-4 py-3">{r.categoryName ?? "—"}</td>
                   <td className="px-4 py-3">{r.departmentName ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <span className="mx-priority" data-priority={r.priority}>
-                      {r.priority}
-                    </span>
-                  </td>
                   <td className="px-4 py-3">
                     <span className="mx-badge-status" data-status={r.status}>
                       {r.status}
@@ -339,7 +322,7 @@ export default function AssignWorkPage() {
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
               <Input
-                placeholder="Ticket no, title, description…"
+                placeholder="Ticket no, description…"
                 className="h-10 border-secondary-200 pl-9 text-sm focus:ring-primary-500"
                 value={activeTab === "unassigned" ? searchInputUn : searchInputActive}
                 onChange={(e) =>
@@ -349,9 +332,6 @@ export default function AssignWorkPage() {
                 }
               />
             </div>
-            <p className="mt-1 text-[10px] text-muted-foreground">
-              Search is debounced to reduce API calls.
-            </p>
           </div>
           <div className="w-full flex-col sm:w-44">
             <label className={filterLabelClass}>Category</label>
@@ -376,25 +356,6 @@ export default function AssignWorkPage() {
               {categories.map((c) => (
                 <option key={c.id} value={c.id} disabled={!c.isActive}>
                   {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="w-full flex-col sm:w-40">
-            <label className={filterLabelClass}>Priority</label>
-            <select
-              className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
-              value={activeTab === "unassigned" ? priorityFilterUn : priorityFilterActive}
-              onChange={(e) =>
-                activeTab === "unassigned"
-                  ? setPriorityFilterUn((e.target.value || "") as ComplaintPriority | "")
-                  : setPriorityFilterActive((e.target.value || "") as ComplaintPriority | "")
-              }
-            >
-              <option value="">All</option>
-              {Object.values(ComplaintPriority).map((p) => (
-                <option key={p} value={p}>
-                  {p}
                 </option>
               ))}
             </select>
@@ -424,12 +385,10 @@ export default function AssignWorkPage() {
                 if (activeTab === "unassigned") {
                   setSearchInputUn("");
                   setCategoryIdUn("");
-                  setPriorityFilterUn("");
                   setPageUn(1);
                 } else {
                   setSearchInputActive("");
                   setCategoryIdActive("");
-                  setPriorityFilterActive("");
                   setPageActive(1);
                 }
               }}

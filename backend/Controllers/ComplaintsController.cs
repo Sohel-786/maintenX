@@ -5,6 +5,7 @@ using net_backend.Data;
 using net_backend.DTOs;
 using net_backend.Models;
 using net_backend.Services;
+using net_backend.Utils;
 using static net_backend.Services.PaginationHelper;
 
 namespace net_backend.Controllers
@@ -41,21 +42,22 @@ namespace net_backend.Controllers
 
         private async Task<string> NextComplaintNoAsync(int locationId)
         {
-            var year = DateTime.UtcNow.Year;
-            var prefix = $"TKT-{year}-";
+            // New format: TKT-01, TKT-02, ... (per-location sequence)
+            const string prefix = "TKT-";
             var last = await _context.Complaints
                 .Where(c => c.LocationId == locationId && c.ComplaintNo.StartsWith(prefix))
-                .OrderByDescending(c => c.ComplaintNo)
+                .OrderByDescending(c => c.Id)
                 .Select(c => c.ComplaintNo)
                 .FirstOrDefaultAsync();
+
             var seq = 1;
-            if (!string.IsNullOrEmpty(last) && last.Length > prefix.Length)
+            if (!string.IsNullOrWhiteSpace(last) && last.Length > prefix.Length)
             {
                 var tail = last[prefix.Length..];
-                if (int.TryParse(tail, out var n))
+                if (int.TryParse(tail, out var n) && n > 0)
                     seq = n + 1;
             }
-            return $"{prefix}{seq:D4}";
+            return $"{prefix}{seq:D2}";
         }
 
         private static bool CanSeeComplaint(Complaint c, User me, UserPermission? perm)
@@ -87,7 +89,6 @@ namespace net_backend.Controllers
             {
                 Id = c.Id,
                 ComplaintNo = c.ComplaintNo,
-                Title = c.Title,
                 DescriptionPreview = string.IsNullOrEmpty(c.Description)
                     ? null
                     : (c.Description.Length > 120 ? c.Description[..120] + "…" : c.Description),
@@ -98,7 +99,6 @@ namespace net_backend.Controllers
                 CategoryName = c.Category?.Name,
                 DepartmentId = c.DepartmentId,
                 DepartmentName = c.Department?.Name,
-                Priority = c.Priority,
                 Status = c.Status,
                 AssignedHandlerUserId = c.AssignedHandlerUserId,
                 AssignedHandlerName = c.AssignedHandler != null
@@ -140,6 +140,113 @@ namespace net_backend.Controllers
             return Ok(new ApiResponse<object> { Data = new { url } });
         }
 
+        private static string SafeSeg(string s)
+        {
+            var clean = new string(s.Where(ch => char.IsLetterOrDigit(ch) || ch is '-' or '_').ToArray());
+            return string.IsNullOrWhiteSpace(clean) ? "x" : clean;
+        }
+
+        private string BuildTicketAssetsPhysicalDir(int companyId, int locationId, int departmentId, string complaintNo, int complaintId)
+        {
+            var ticketSeg = SafeSeg($"{complaintNo}-{complaintId}");
+            return Path.Combine(
+                _env.ContentRootPath,
+                "wwwroot",
+                "storage",
+                "company",
+                companyId.ToString(),
+                "location",
+                locationId.ToString(),
+                "department",
+                departmentId.ToString(),
+                "ticket",
+                ticketSeg,
+                "assets");
+        }
+
+        private static string BuildTicketAssetsUrl(int companyId, int locationId, int departmentId, string complaintNo, int complaintId, string fileName)
+        {
+            var ticketSeg = SafeSeg($"{complaintNo}-{complaintId}");
+            return $"/storage/company/{companyId}/location/{locationId}/department/{departmentId}/ticket/{ticketSeg}/assets/{fileName}";
+        }
+
+        [HttpPost("{id:int}/raised-photo")]
+        public async Task<ActionResult<ApiResponse<object>>> UploadRaisedPhoto(int id, IFormFile file)
+        {
+            if (!await HasPermission("RaiseComplaint")) return Forbidden();
+            var companyId = await GetCurrentCompanyIdAsync();
+            var locationId = await GetCurrentLocationIdAsync();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "No file." });
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Max file size is 5MB." });
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!ImageOptimizer.IsImageExtension(ext))
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Only image files are allowed." });
+
+            var c = await _context.Complaints.FirstOrDefaultAsync(x => x.Id == id && x.LocationId == locationId);
+            if (c == null) return NotFound();
+
+            // Ensure ticket's department exists (required now)
+            var departmentId = c.DepartmentId;
+
+            var dir = BuildTicketAssetsPhysicalDir(companyId, locationId, departmentId, c.ComplaintNo, c.Id);
+            var fileName = $"{Guid.NewGuid():N}.webp";
+            var physical = Path.Combine(dir, fileName);
+
+            await using (var stream = file.OpenReadStream())
+            {
+                await ImageOptimizer.OptimizeImageToWebpAsync(stream, physical);
+            }
+
+            var url = BuildTicketAssetsUrl(companyId, locationId, departmentId, c.ComplaintNo, c.Id, fileName);
+
+            var urls = ParseUrls(c.ImageUrlsJson) ?? new List<string>();
+            urls.Add(url);
+            c.ImageUrlsJson = SerializeUrls(urls);
+            c.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse<object> { Data = new { url } });
+        }
+
+        [HttpPost("{id:int}/completion-photo")]
+        public async Task<ActionResult<ApiResponse<object>>> UploadCompletionPhoto(int id, IFormFile file)
+        {
+            if (!await HasPermission("HandleComplaints")) return Forbidden();
+            var companyId = await GetCurrentCompanyIdAsync();
+            var locationId = await GetCurrentLocationIdAsync();
+
+            if (file == null || file.Length == 0)
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "No file." });
+            if (file.Length > 5 * 1024 * 1024)
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Max file size is 5MB." });
+            var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
+            if (!ImageOptimizer.IsImageExtension(ext))
+                return BadRequest(new ApiResponse<object> { Success = false, Message = "Only image files are allowed." });
+
+            var c = await _context.Complaints.FirstOrDefaultAsync(x => x.Id == id && x.LocationId == locationId);
+            if (c == null) return NotFound();
+
+            var departmentId = c.DepartmentId;
+            var dir = BuildTicketAssetsPhysicalDir(companyId, locationId, departmentId, c.ComplaintNo, c.Id);
+            var fileName = $"completion-{Guid.NewGuid():N}.webp";
+            var physical = Path.Combine(dir, fileName);
+
+            await using (var stream = file.OpenReadStream())
+            {
+                await ImageOptimizer.OptimizeImageToWebpAsync(stream, physical);
+            }
+
+            var url = BuildTicketAssetsUrl(companyId, locationId, departmentId, c.ComplaintNo, c.Id, fileName);
+            c.CompletionPhotoUrl = url;
+            c.UpdatedAt = DateTime.Now;
+            await _context.SaveChangesAsync();
+
+            return Ok(new ApiResponse<object> { Data = new { url } });
+        }
+
         [HttpGet]
         public async Task<ActionResult<ApiResponse<List<ComplaintListItemDto>>>> GetList(
             [FromQuery] string? search,
@@ -147,7 +254,6 @@ namespace net_backend.Controllers
             [FromQuery] string? statusGroup,
             [FromQuery] string? assignmentBucket,
             [FromQuery] int? categoryId,
-            [FromQuery] ComplaintPriority? priority,
             [FromQuery] int page = 1,
             [FromQuery] int pageSize = 25)
         {
@@ -207,14 +313,11 @@ namespace net_backend.Controllers
                 q = q.Where(c => c.Status == status.Value);
             if (categoryId.HasValue && categoryId.Value > 0)
                 q = q.Where(c => c.CategoryId == categoryId.Value);
-            if (priority.HasValue)
-                q = q.Where(c => c.Priority == priority.Value);
             if (!string.IsNullOrWhiteSpace(search))
             {
                 var s = search.Trim().ToLower();
                 q = q.Where(c =>
                     c.ComplaintNo.ToLower().Contains(s) ||
-                    c.Title.ToLower().Contains(s) ||
                     (c.Description != null && c.Description.ToLower().Contains(s)));
             }
 
@@ -257,7 +360,6 @@ namespace net_backend.Controllers
             {
                 Id = row.Id,
                 ComplaintNo = row.ComplaintNo,
-                Title = row.Title,
                 Description = c.Description,
                 LocationId = row.LocationId,
                 LocationName = row.LocationName,
@@ -266,7 +368,6 @@ namespace net_backend.Controllers
                 CategoryName = row.CategoryName,
                 DepartmentId = row.DepartmentId,
                 DepartmentName = row.DepartmentName,
-                Priority = row.Priority,
                 Status = row.Status,
                 AssignedHandlerUserId = row.AssignedHandlerUserId,
                 AssignedHandlerName = row.AssignedHandlerName,
@@ -296,23 +397,26 @@ namespace net_backend.Controllers
         {
             if (!await HasPermission("RaiseComplaint")) return Forbidden();
             var locationId = await GetCurrentLocationIdAsync();
+            var companyId = await GetCurrentCompanyIdAsync();
             if (string.IsNullOrWhiteSpace(request.Description))
                 return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Description is required." });
+            if (request.CategoryId <= 0)
+                return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Category is required." });
+            if (request.DepartmentId <= 0)
+                return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Department is required." });
 
             var cat = await _context.ComplaintCategories
-                .FirstOrDefaultAsync(c => c.Id == request.CategoryId && c.LocationId == locationId && c.IsActive);
+                .FirstOrDefaultAsync(c => c.Id == request.CategoryId && c.CompanyId == companyId && c.IsActive);
             if (cat == null)
                 return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Invalid category." });
 
-            if (request.DepartmentId.HasValue)
-            {
-                var deptOk = await _context.FacilityDepartments.AnyAsync(d =>
-                    d.Id == request.DepartmentId.Value && d.LocationId == locationId && d.IsActive);
-                if (!deptOk)
-                    return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Invalid department." });
-            }
+            var deptOk = await _context.FacilityDepartments.AnyAsync(d =>
+                d.Id == request.DepartmentId && d.CompanyId == companyId && d.IsActive);
+            if (!deptOk)
+                return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Invalid department." });
 
-            var title = string.IsNullOrWhiteSpace(request.Title) ? cat.Name : request.Title.Trim();
+            // Keep tickets simple: title defaults to category name (no title field in UI).
+            var title = cat.Name;
             if (title.Length > 200) title = title[..200];
 
             var no = await NextComplaintNoAsync(locationId);
@@ -324,7 +428,7 @@ namespace net_backend.Controllers
                 LocationId = locationId,
                 CategoryId = request.CategoryId,
                 DepartmentId = request.DepartmentId,
-                Priority = request.Priority,
+                Priority = ComplaintPriority.Medium,
                 Status = ComplaintStatus.Open,
                 RaisedByUserId = CurrentUserId,
                 ImageUrlsJson = SerializeUrls(request.ImageUrls),

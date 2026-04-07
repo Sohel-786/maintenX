@@ -19,7 +19,6 @@ import api from "@/lib/api";
 import {
   ComplaintCategory,
   ComplaintListItem,
-  ComplaintPriority,
   ComplaintStatus,
   DashboardMetrics,
 } from "@/types";
@@ -62,7 +61,6 @@ export function MxDashboardView() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 400);
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [priorityFilter, setPriorityFilter] = useState<ComplaintPriority | "">("");
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [detailId, setDetailId] = useState<number | null>(null);
@@ -78,7 +76,7 @@ export function MxDashboardView() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, categoryId, priorityFilter, statusGroup, statusExtra, pageSize]);
+  }, [debouncedSearch, categoryId, statusGroup, statusExtra, pageSize]);
 
   const { data: metrics, isLoading: metricsLoading } = useQuery({
     queryKey: ["dashboard-metrics", selected?.locationId],
@@ -103,7 +101,6 @@ export function MxDashboardView() {
   const listParams = {
     search: debouncedSearch.trim() || undefined,
     categoryId: categoryId === "" ? undefined : categoryId,
-    priority: priorityFilter === "" ? undefined : priorityFilter,
     statusGroup: statusGroup ?? undefined,
     status: !statusGroup && statusExtra ? statusExtra : undefined,
     page,
@@ -117,7 +114,6 @@ export function MxDashboardView() {
       selected?.locationId,
       debouncedSearch,
       categoryId,
-      priorityFilter,
       statusGroup,
       statusExtra,
       page,
@@ -146,7 +142,7 @@ export function MxDashboardView() {
 
   const hasCardFilter = statusGroup != null;
   const hasAdvancedFilters =
-    searchInput.trim() !== "" || categoryId !== "" || priorityFilter !== "" || statusExtra !== "";
+    searchInput.trim() !== "" || categoryId !== "" || statusExtra !== "";
 
   const clearCardFilter = () => setStatusGroup(null);
 
@@ -163,13 +159,12 @@ export function MxDashboardView() {
       });
       const data = (res.data.data ?? []) as ComplaintListItem[];
       const headers = showCompany
-        ? ["Ticket", "Title", "Category", "Department", "Company", "Status", "Handler", "Updated"]
-        : ["Ticket", "Title", "Category", "Department", "Status", "Handler", "Updated"];
+        ? ["Ticket", "Category", "Department", "Company", "Status", "Handler", "Updated"]
+        : ["Ticket", "Category", "Department", "Status", "Handler", "Updated"];
       const csvRows = data.map((r) => {
         if (showCompany) {
           return [
             r.complaintNo,
-            r.title,
             r.categoryName ?? "",
             r.departmentName ?? "",
             r.companyName ?? "",
@@ -180,7 +175,6 @@ export function MxDashboardView() {
         }
         return [
           r.complaintNo,
-          r.title,
           r.categoryName ?? "",
           r.departmentName ?? "",
           r.status,
@@ -194,7 +188,7 @@ export function MxDashboardView() {
     }
   }, [listParams, selected, showCompany]);
 
-  const colCount = (showCompany ? 1 : 0) + 8;
+  const colCount = (showCompany ? 1 : 0) + 7;
 
   return (
     <div className="p-6">
@@ -202,7 +196,7 @@ export function MxDashboardView() {
         <div>
           <h1 className="mb-2 text-3xl font-bold tracking-tight text-secondary-900">Dashboard</h1>
           <p className="font-medium text-secondary-500">
-            Welcome back, {user?.firstName ?? "there"} 👋 — click a summary card to filter the table below.
+            Welcome back, {user?.firstName ?? "there"} — click a summary card to filter the table below.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -223,46 +217,51 @@ export function MxDashboardView() {
         <div className="flex justify-center py-16 text-secondary-500">Loading dashboard…</div>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 key: "total" as const,
                 label: "Total tickets",
                 value: s?.total ?? 0,
                 icon: Ticket,
-                active: statusGroup === null,
-                ring: "ring-amber-200",
-                iconBg: "bg-amber-50 text-amber-800",
+                baseBg: "bg-amber-50/40",
+                shadowColor: "shadow-amber-500/20",
+                iconColor: "text-amber-600",
               },
               {
                 key: "open" as const,
                 label: "Open",
                 value: s?.open ?? 0,
                 icon: CircleDot,
-                active: statusGroup === "open",
-                ring: "ring-sky-300",
-                iconBg: "bg-sky-50 text-sky-800",
+                baseBg: "bg-sky-50/40",
+                shadowColor: "shadow-sky-500/20",
+                iconColor: "text-sky-600",
               },
               {
                 key: "inprogress" as const,
                 label: "In progress",
                 value: s?.inProgress ?? 0,
                 icon: Zap,
-                active: statusGroup === "inprogress",
-                ring: "ring-orange-200",
-                iconBg: "bg-orange-50 text-orange-900",
+                baseBg: "bg-orange-50/40",
+                shadowColor: "shadow-orange-500/20",
+                iconColor: "text-orange-600",
               },
               {
                 key: "completed" as const,
                 label: "Completed",
                 value: s?.completed ?? 0,
                 icon: CheckCircle2,
-                active: statusGroup === "completed",
-                ring: "ring-emerald-200",
-                iconBg: "bg-emerald-50 text-emerald-900",
+                baseBg: "bg-emerald-50/40",
+                shadowColor: "shadow-emerald-500/20",
+                iconColor: "text-emerald-600",
               },
             ].map((c) => {
               const Icon = c.icon;
+              const active =
+                (c.key === "total" && statusGroup === null) ||
+                (c.key === "open" && statusGroup === "open") ||
+                (c.key === "inprogress" && statusGroup === "inprogress") ||
+                (c.key === "completed" && statusGroup === "completed");
               return (
                 <button
                   key={c.key}
@@ -274,16 +273,24 @@ export function MxDashboardView() {
                     else if (c.key === "inprogress") setStatusGroup("inprogress");
                     else setStatusGroup("completed");
                   }}
-                  className={
-                    "rounded-xl border border-secondary-200 bg-white p-5 text-left shadow-sm transition-all hover:shadow-md " +
-                    (c.active ? `ring-2 ${c.ring} ring-offset-2` : "")
-                  }
+                  className={[
+                    "relative h-full overflow-hidden rounded-2xl border border-secondary-100/60 p-5 text-left shadow-xl transition-all duration-500 ease-out",
+                    c.baseBg,
+                    c.shadowColor,
+                    "hover:shadow-2xl hover:-translate-y-0.5",
+                    active ? "ring-2 ring-primary-200 ring-offset-2" : "",
+                  ].join(" ")}
                 >
-                  <div className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl ${c.iconBg}`}>
-                    <Icon className="h-5 w-5" />
+                  <div className="flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">{c.label}</p>
+                      <p className="mt-1 text-3xl font-extrabold tabular-nums text-secondary-900">{c.value}</p>
+                    </div>
+                    <div className="rounded-xl bg-secondary-50 p-3 shadow-sm transition-all duration-300 hover:scale-105">
+                      <Icon className={`h-5 w-5 ${c.iconColor}`} />
+                    </div>
                   </div>
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">{c.label}</p>
-                  <p className="mt-1 text-3xl font-bold tabular-nums text-secondary-900">{c.value}</p>
+                  <div className={`absolute -right-6 -bottom-6 h-24 w-24 rounded-full ${c.iconColor} opacity-[0.06] pointer-events-none transition-opacity duration-500`} />
                 </button>
               );
             })}
@@ -324,13 +331,12 @@ export function MxDashboardView() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
                   <Input
-                    placeholder="Ticket no, title, description…"
+                    placeholder="Ticket no, description…"
                     className="h-10 border-secondary-200 pl-9 text-sm focus:ring-primary-500"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                   />
                 </div>
-                <p className="mt-1 text-[10px] text-muted-foreground">Debounced search to limit API calls.</p>
               </div>
               <div className="w-full flex-col sm:w-44">
                 <label className={filterLabelClass}>Category</label>
@@ -343,21 +349,6 @@ export function MxDashboardView() {
                   {categories.map((c) => (
                     <option key={c.id} value={c.id} disabled={!c.isActive}>
                       {c.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div className="w-full flex-col sm:w-40">
-                <label className={filterLabelClass}>Priority</label>
-                <select
-                  className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
-                  value={priorityFilter}
-                  onChange={(e) => setPriorityFilter((e.target.value || "") as ComplaintPriority | "")}
-                >
-                  <option value="">All</option>
-                  {Object.values(ComplaintPriority).map((p) => (
-                    <option key={p} value={p}>
-                      {p}
                     </option>
                   ))}
                 </select>
@@ -394,7 +385,6 @@ export function MxDashboardView() {
                   onClick={() => {
                     setSearchInput("");
                     setCategoryId("");
-                    setPriorityFilter("");
                     setStatusExtra("");
                     setStatusGroup(null);
                     setPage(1);
@@ -411,11 +401,9 @@ export function MxDashboardView() {
                   <tr className="border-b border-primary-200 bg-primary-100 text-primary-900 dark:border-primary-800 dark:bg-primary-900/40 dark:text-primary-200">
                     <th className="w-14 border-r border-primary-200/50 px-4 py-3 text-center font-semibold">Sr.</th>
                     <th className="px-4 py-3 font-semibold">Ticket</th>
-                    <th className="px-4 py-3 font-semibold">Title</th>
                     {showCompany && <th className="px-4 py-3 font-semibold">Company</th>}
                     <th className="px-4 py-3 font-semibold">Category</th>
                     <th className="px-4 py-3 font-semibold">Dept</th>
-                    <th className="px-4 py-3 font-semibold">Priority</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Handler</th>
                     <th className="px-4 py-3 font-semibold">Updated</th>
@@ -448,7 +436,6 @@ export function MxDashboardView() {
                           {totalCount - (page - 1) * pageSize - idx}
                         </td>
                         <td className="px-4 py-3 font-mono text-xs font-semibold">{r.complaintNo}</td>
-                        <td className="px-4 py-3 font-semibold text-secondary-900">{r.title}</td>
                         {showCompany && <td className="px-4 py-3">{r.companyName ?? "—"}</td>}
                         <td className="px-4 py-3">
                           <span className="rounded-full bg-sky-50 px-2.5 py-0.5 text-xs font-medium text-sky-900">
@@ -456,11 +443,6 @@ export function MxDashboardView() {
                           </span>
                         </td>
                         <td className="px-4 py-3">{r.departmentName ?? "—"}</td>
-                        <td className="px-4 py-3">
-                          <span className="mx-priority" data-priority={r.priority}>
-                            {r.priority}
-                          </span>
-                        </td>
                         <td className="px-4 py-3">
                           <span className="mx-badge-status" data-status={r.status}>
                             {r.status}

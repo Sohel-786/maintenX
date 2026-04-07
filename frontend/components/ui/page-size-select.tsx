@@ -19,7 +19,6 @@ export interface PageSizeSelectProps {
 export function PageSizeSelect({ value, onChange, label = "Rows", className }: PageSizeSelectProps) {
   return (
     <div className={cn("min-w-0 w-20 shrink-0 max-w-[5.5rem]", className)}>
-      <label className={filterLabelClass}>{label}</label>
       <Select
         value={value.toString()}
         onValueChange={(v) => onChange(Number(v))}

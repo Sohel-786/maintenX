@@ -47,7 +47,7 @@ For the combined IIS publish (`publish.ps1`), set `frontend/.env.production` (se
 Defined in `backend/Data/DbInitializer.cs`:
 
 - **Username**: `mitul`
-- **Password**: `admin`
+- **Password**: `6636`
 
 Change immediately in production.
 

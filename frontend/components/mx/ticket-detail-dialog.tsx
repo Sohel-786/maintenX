@@ -10,6 +10,55 @@ import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { format } from "date-fns";
+import { FullScreenImageViewer } from "@/components/ui/full-screen-image-viewer";
+import { AttachmentListDialog } from "@/components/ui/attachment-list-dialog";
+import { Building2, MapPin, Tags, Layers, User as UserIcon, Wrench, X, CalendarDays, Activity, CheckCircle2, AlertCircle } from "lucide-react";
+
+function statusMeta(status: ComplaintStatus) {
+  switch (status) {
+    case ComplaintStatus.Open:
+      return { label: "Open", pill: "bg-amber-950/60 text-amber-50 border-amber-200/20", dot: "bg-amber-300" };
+    case ComplaintStatus.Assigned:
+      return { label: "Assigned", pill: "bg-sky-950/60 text-sky-50 border-sky-200/20", dot: "bg-sky-300" };
+    case ComplaintStatus.Accepted:
+      return { label: "Accepted", pill: "bg-indigo-950/60 text-indigo-50 border-indigo-200/20", dot: "bg-indigo-300" };
+    case ComplaintStatus.InProgress:
+      return { label: "In progress", pill: "bg-orange-950/60 text-orange-50 border-orange-200/20", dot: "bg-orange-300" };
+    case ComplaintStatus.Done:
+      return { label: "Done", pill: "bg-emerald-950/60 text-emerald-50 border-emerald-200/20", dot: "bg-emerald-300" };
+    case ComplaintStatus.Closed:
+      return { label: "Closed", pill: "bg-secondary-950/70 text-secondary-50 border-secondary-200/20", dot: "bg-secondary-200" };
+    default:
+      return { label: String(status), pill: "bg-secondary-950/70 text-secondary-50 border-secondary-200/20", dot: "bg-secondary-200" };
+  }
+}
+
+function InfoTile({
+  icon,
+  label,
+  value,
+  iconClassName,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  iconClassName?: string;
+}) {
+  const Icon = icon;
+  return (
+    <div className="rounded-xl border border-secondary-100 bg-white px-4 py-3 shadow-sm">
+      <div className="flex items-start gap-3">
+        <div className={`mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-secondary-50 ${iconClassName ?? ""}`}>
+          <Icon className="h-4 w-4" />
+        </div>
+        <div className="min-w-0">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-secondary-500">{label}</div>
+          <div className="mt-0.5 truncate text-sm font-semibold text-secondary-900">{value || "—"}</div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 function assetUrl(path: string) {
   if (path.startsWith("http") || path.startsWith("blob:")) return path;
@@ -28,6 +77,9 @@ export function TicketDetailDialog({
   const queryClient = useQueryClient();
   const [assignHandlerId, setAssignHandlerId] = useState("");
   const [completionFile, setCompletionFile] = useState<File | null>(null);
+  const [imageViewerOpen, setImageViewerOpen] = useState(false);
+  const [imageViewerSrc, setImageViewerSrc] = useState<string | null>(null);
+  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
 
   const { data: detail } = useQuery({
     queryKey: ["complaint", detailId],
@@ -107,7 +159,7 @@ export function TicketDetailDialog({
     if (!completionFile) return null;
     const fd = new FormData();
     fd.append("file", completionFile);
-    const res = await api.post("/complaints/attachments", fd, {
+    const res = await api.post(`/complaints/${detailId}/completion-photo`, fd, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     const url = (res.data?.data as { url?: string })?.url;
@@ -138,114 +190,118 @@ export function TicketDetailDialog({
       size="xl"
     >
       {detail && (
-        <div className="mx-panel space-y-4 p-2 max-h-[75vh] overflow-y-auto">
-          <div>
-            <h3 className="font-semibold text-lg" style={{ color: "var(--mx-navy-900)" }}>
-              {detail.title}
-            </h3>
-            <p className="text-sm mt-1 whitespace-pre-wrap" style={{ color: "var(--mx-muted)" }}>
-              {detail.description}
-            </p>
-          </div>
-
-          {detail.imageUrls && detail.imageUrls.length > 0 && (
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "var(--mx-navy-400)" }}>
-                Photos (raised)
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {detail.imageUrls.map((u, i) => (
-                  <a key={i} href={assetUrl(u)} target="_blank" rel="noreferrer" className="block">
-                    <img
-                      src={assetUrl(u)}
-                      alt=""
-                      className="h-24 w-24 rounded-lg border object-cover"
-                      style={{ borderColor: "var(--mx-border)" }}
-                    />
-                  </a>
-                ))}
+        <div className="max-h-[80vh] overflow-y-auto">
+          <div className="sticky top-0 z-10 border-b border-secondary-100 bg-white/95 px-6 py-4 backdrop-blur">
+            <div className="overflow-hidden rounded-2xl border border-secondary-200/40 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-800 px-4 py-3 text-white shadow-sm">
+              <div className="flex items-start justify-between gap-4">
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="font-mono text-sm font-extrabold tracking-wide">{detail.complaintNo}</div>
+                    <span
+                      className={[
+                        "inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-[11px] font-extrabold",
+                        statusMeta(detail.status).pill,
+                      ].join(" ")}
+                    >
+                      <span className={`h-1.5 w-1.5 rounded-full ${statusMeta(detail.status).dot}`} />
+                      {statusMeta(detail.status).label}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-white/85">
+                    <span className="inline-flex items-center gap-1.5">
+                      <CalendarDays className="h-3.5 w-3.5" />
+                      {format(new Date(detail.createdAt), "dd MMM yyyy")}
+                    </span>
+                  </div>
+                  <div className="mt-2 text-sm font-semibold text-white/95">
+                    {detail.categoryName ?? "—"} <span className="text-white/70">→</span> {detail.departmentName ?? "—"}
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 w-9 rounded-xl p-0 text-white hover:bg-white/15"
+                  onClick={handleClose}
+                  title="Close"
+                >
+                  <X className="h-5 w-5" />
+                </Button>
               </div>
             </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-3 text-sm">
-            <div>
-              <span style={{ color: "var(--mx-muted)" }}>Status</span>
-              <p className="font-medium">{detail.status}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--mx-muted)" }}>Priority</span>
-              <p className="font-medium">{detail.priority}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--mx-muted)" }}>Category</span>
-              <p className="font-medium">{detail.categoryName ?? "—"}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--mx-muted)" }}>Department</span>
-              <p className="font-medium">{detail.departmentName ?? "—"}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--mx-muted)" }}>Handler</span>
-              <p className="font-medium">{detail.assignedHandlerName ?? "—"}</p>
-            </div>
-            <div>
-              <span style={{ color: "var(--mx-muted)" }}>Raised by</span>
-              <p className="font-medium">{detail.raisedByName ?? "—"}</p>
-            </div>
           </div>
+
+          <div className="space-y-6 p-6">
+            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              <InfoTile icon={Building2} label="Company" value={detail.companyName ?? "—"} iconClassName="text-sky-700" />
+              <InfoTile icon={MapPin} label="Location" value={detail.locationName ?? "—"} iconClassName="text-indigo-700" />
+              <InfoTile icon={Layers} label="Department" value={detail.departmentName ?? "—"} iconClassName="text-emerald-700" />
+              <InfoTile icon={Tags} label="Category" value={detail.categoryName ?? "—"} iconClassName="text-amber-700" />
+              <InfoTile icon={UserIcon} label="Raised by" value={detail.raisedByName ?? "—"} iconClassName="text-violet-700" />
+              <InfoTile icon={Wrench} label="Handler" value={detail.assignedHandlerName ?? "—"} iconClassName="text-orange-700" />
+            </div>
+
+            <div className="rounded-2xl border border-secondary-100 bg-white p-5 shadow-sm">
+              <div className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">Issue description</div>
+              <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-secondary-900">
+                {detail.description}
+              </div>
+            </div>
+
+          {/* Raised attachments are shown in timeline (View button with count). */}
 
           {detail.completionPhotoUrl && (
             <div>
-              <h4 className="text-xs font-bold uppercase tracking-wide mb-2" style={{ color: "var(--mx-navy-400)" }}>
-                Completion photo
-              </h4>
-              <a href={assetUrl(detail.completionPhotoUrl)} target="_blank" rel="noreferrer">
-                <img
-                  src={assetUrl(detail.completionPhotoUrl)}
-                  alt="Completion"
-                  className="max-h-48 rounded-lg border object-contain"
-                  style={{ borderColor: "var(--mx-border)" }}
-                />
-              </a>
+              <div className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">Completion photo</div>
+              <button
+                type="button"
+                className="mt-3 block w-full overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50"
+                onClick={() => {
+                  setImageViewerSrc(assetUrl(detail.completionPhotoUrl!));
+                  setImageViewerOpen(true);
+                }}
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={assetUrl(detail.completionPhotoUrl)} alt="Completion" className="max-h-56 w-full object-contain" />
+              </button>
             </div>
           )}
 
           {canAssign && (
-            <div className="flex flex-wrap gap-2 items-end border-t pt-4" style={{ borderColor: "var(--mx-border)" }}>
-              <div className="flex-1 min-w-[200px]">
-                <label className="text-xs" style={{ color: "var(--mx-muted)" }}>
-                  Assign / reassign handler
-                </label>
-                <select
-                  className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
-                  style={{ borderColor: "var(--mx-border)" }}
-                  value={assignHandlerId}
-                  onChange={(e) => setAssignHandlerId(e.target.value)}
+            <div className="rounded-2xl border border-secondary-100 bg-white p-4 shadow-sm">
+              <div className="mb-3 text-[11px] font-bold uppercase tracking-wider text-secondary-500">Assign / reassign handler</div>
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                <div className="flex-1 min-w-[220px]">
+                  <select
+                    className="h-10 w-full rounded-md border border-secondary-200 bg-white px-3 text-sm"
+                    value={assignHandlerId}
+                    onChange={(e) => setAssignHandlerId(e.target.value)}
+                  >
+                    <option value="">Select handler</option>
+                    {handlers.map((h) => (
+                      <option key={h.id} value={h.id}>
+                        {h.firstName} {h.lastName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <Button
+                  disabled={!assignHandlerId || assignMutation.isPending}
+                  onClick={() => assignMutation.mutate({ id: detail.id, handlerUserId: Number(assignHandlerId) })}
                 >
-                  <option value="">Select handler</option>
-                  {handlers.map((h) => (
-                    <option key={h.id} value={h.id}>
-                      {h.firstName} {h.lastName}
-                    </option>
-                  ))}
-                </select>
+                  Apply
+                </Button>
               </div>
-              <Button
-                disabled={!assignHandlerId || assignMutation.isPending}
-                onClick={() => assignMutation.mutate({ id: detail.id, handlerUserId: Number(assignHandlerId) })}
-              >
-                Apply
-              </Button>
             </div>
           )}
 
-          <div className="flex flex-wrap gap-2 border-t pt-4" style={{ borderColor: "var(--mx-border)" }}>
-            {detail.status === ComplaintStatus.Assigned && isHandler && (
-              <Button variant="secondary" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Accepted })}>
-                Accept
-              </Button>
-            )}
+          <div className="rounded-2xl border border-secondary-100 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2">
+              {detail.status === ComplaintStatus.Assigned && isHandler && (
+                <Button variant="secondary" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Accepted })}>
+                  Accept
+                </Button>
+              )}
             {detail.status === ComplaintStatus.Accepted && isHandler && (
               <Button variant="secondary" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.InProgress })}>
                 Start work
@@ -294,27 +350,83 @@ export function TicketDetailDialog({
                   Reopen for handler
                 </Button>
               )}
+            </div>
           </div>
 
-          <div className="border-t pt-4" style={{ borderColor: "var(--mx-border)" }}>
-            <h4 className="text-sm font-semibold mb-3" style={{ color: "var(--mx-navy-900)" }}>
-              Timeline
-            </h4>
-            <ul className="space-y-3">
-              {detail.timeline?.map((t) => (
-                <li key={t.id} className="text-sm border-l-2 pl-3" style={{ borderColor: "var(--mx-gold)" }}>
-                  <p className="text-xs" style={{ color: "var(--mx-muted)" }}>
-                    {format(new Date(t.createdAt), "dd MMM yyyy HH:mm")} · {t.userName ?? "User"}
-                  </p>
-                  <p>{t.message}</p>
-                  {t.fromStatus != null && (
-                    <p className="text-xs" style={{ color: "var(--mx-muted)" }}>
-                      {t.fromStatus} → {t.toStatus}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
+            <div className="rounded-2xl border border-secondary-100 bg-white p-5 shadow-sm">
+              <div className="mb-4 text-[11px] font-bold uppercase tracking-wider text-secondary-500">Activity timeline</div>
+              <div className="relative pl-6">
+                <div className="absolute left-2 top-1 bottom-1 w-px bg-secondary-200" />
+                <div className="space-y-4">
+                  {(detail.timeline ?? []).map((t) => {
+                    const isStatusChange = t.fromStatus != null;
+                    const Icon = isStatusChange
+                      ? t.toStatus === ComplaintStatus.Closed
+                        ? CheckCircle2
+                        : AlertCircle
+                      : Activity;
+                    const iconColor =
+                      t.toStatus === ComplaintStatus.Closed
+                        ? "text-emerald-700 bg-emerald-50 border-emerald-200"
+                        : isStatusChange
+                          ? "text-sky-700 bg-sky-50 border-sky-200"
+                          : "text-secondary-700 bg-secondary-50 border-secondary-200";
+                    return (
+                      <div key={t.id} className="relative">
+                        <div className={`absolute -left-6 top-0.5 flex h-8 w-8 items-center justify-center rounded-full border ${iconColor}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <div className="rounded-xl border border-secondary-100 bg-white px-4 py-3">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="text-sm font-semibold text-secondary-900">{t.message}</div>
+                            <div className="text-xs text-secondary-500">
+                              {format(new Date(t.createdAt), "dd MMM yyyy, HH:mm")}
+                            </div>
+                          </div>
+                          <div className="mt-1 text-xs text-secondary-500">
+                            {t.userName ?? "User"}
+                            {t.fromStatus != null && (
+                              <span className="ml-2">
+                                <span className="font-semibold text-secondary-700">{t.fromStatus}</span>
+                                <span className="mx-1">→</span>
+                                <span className="font-semibold text-secondary-700">{t.toStatus}</span>
+                              </span>
+                            )}
+                          </div>
+                          {detail.imageUrls && detail.imageUrls.length > 0 && /ticket raised/i.test(t.message ?? "") && (
+                            <div className="mt-3">
+                              <Button type="button" variant="outline" size="sm" onClick={() => setAttachmentsOpen(true)}>
+                                View attachments ({detail.imageUrls.length})
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            <FullScreenImageViewer
+              isOpen={imageViewerOpen}
+              onClose={() => setImageViewerOpen(false)}
+              imageSrc={imageViewerSrc}
+              alt="Ticket photo"
+              disableNoScroll
+            />
+
+            <AttachmentListDialog
+              open={attachmentsOpen}
+              onClose={() => setAttachmentsOpen(false)}
+              urls={(detail.imageUrls ?? []) as string[]}
+              urlsToDelete={[]}
+              pendingFiles={[]}
+              onRemoveUrl={() => {}}
+              onRemovePending={() => {}}
+              isEditing={false}
+              title="Ticket attachments"
+            />
           </div>
         </div>
       )}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,7 +27,7 @@ import {
   CardHeader,
   CardTitle
 } from "@/components/ui/card";
-import { Role } from "@/types";
+import { FacilityDepartment, Role } from "@/types";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import {
   useAppSettings,
@@ -55,7 +55,7 @@ import { User, UserPermission } from "@/types";
 import { Plus, Edit2, Search, Eye, EyeOff, MapPin } from "lucide-react";
 import { applyPrimaryColor } from "@/lib/theme";
 import { useSoftwareProfileDraft } from "@/contexts/software-profile-draft-context";
-import { DEFAULT_AVATAR_PATH } from "@/lib/avatar-options";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -70,11 +70,12 @@ const tabs = [
 
 const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
-  password: z.string().min(1, "Password is mandatory"),
+  password: z.string().optional(),
   name: z.string().trim().min(1, "Name is required"),
   role: z.nativeEnum(Role),
   isActive: z.boolean().optional(),
   mobileNumber: z.string().optional().nullable(),
+  profileDepartment: z.string().optional().nullable(),
   companyId: z.number().optional(),
   locationId: z.number().optional(),
 }).superRefine((data, ctx) => {
@@ -189,7 +190,8 @@ export default function SettingsPage() {
   const [isUserFormOpen, setIsUserFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showPassword, setShowPassword] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
+  const searchTerm = useDebouncedValue(searchInput, 400);
   const { data: companies = [] } = useCompaniesActive();
   const { data: locations = [] } = useLocationsActive();
   const queryClient = useQueryClient();
@@ -234,6 +236,15 @@ export default function SettingsPage() {
     data: currentUserPermissions,
     isLoading: currentUserPermissionsLoading,
   } = useCurrentUserPermissions();
+
+  const { data: departments = [] } = useQuery({
+    queryKey: ["facility-departments"],
+    queryFn: async () => {
+      const res = await api.get("/facility-departments");
+      return (res.data.data ?? []) as FacilityDepartment[];
+    },
+    enabled: !!currentUserPermissions?.accessSettings,
+  });
 
   useEffect(() => {
     if (
@@ -320,6 +331,7 @@ export default function SettingsPage() {
         name: "",
         role: Role.EMPLOYEE,
         isActive: true,
+        profileDepartment: "",
         companyId: undefined,
         locationId: undefined,
       });
@@ -449,6 +461,7 @@ export default function SettingsPage() {
         isActive: user.isActive,
         mobileNumber: user.mobileNumber || "",
         password: user.decryptedPassword || "",
+        profileDepartment: user.profileDepartment || "",
         companyId,
         locationId,
       });
@@ -460,6 +473,7 @@ export default function SettingsPage() {
         name: "",
         role: Role.EMPLOYEE,
         isActive: true,
+        profileDepartment: "",
         companyId: undefined,
         locationId: undefined,
       });
@@ -474,6 +488,10 @@ export default function SettingsPage() {
   };
 
   const onSubmitUser = (data: UserForm) => {
+    if (!editingUser && (!data.password || data.password.trim().length === 0)) {
+      toast.error("Password is mandatory");
+      return;
+    }
     const normalized = data.name?.trim() || "";
     const parts = normalized.split(/\s+/).filter(Boolean);
     const firstName = parts[0] ?? "";
@@ -487,6 +505,7 @@ export default function SettingsPage() {
         role: data.role,
         isActive: data.isActive,
         mobileNumber: data.mobileNumber,
+        profileDepartment: data.profileDepartment,
         companyId: data.companyId,
         locationId: data.locationId,
       };
@@ -512,6 +531,7 @@ export default function SettingsPage() {
           role: data.role,
           isActive: data.isActive ?? false,
           mobileNumber: data.mobileNumber,
+          profileDepartment: data.profileDepartment,
           companyId,
           locationId,
         },
@@ -1045,8 +1065,8 @@ export default function SettingsPage() {
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400" />
                       <Input
                         placeholder="Search by name or username..."
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
+                        value={searchInput}
+                        onChange={(e) => setSearchInput(e.target.value)}
                         className="pl-10"
                       />
                     </div>
@@ -1195,7 +1215,7 @@ export default function SettingsPage() {
                   placeholder="e.g. Rahul Sharma"
                 />
                 {errors.name && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tighter">{errors.name.message}</p>
+                  <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-tighter">{errors.name.message}</p>
                 )}
               </div>
             </div>
@@ -1212,11 +1232,11 @@ export default function SettingsPage() {
                   />
                 </div>
                 {errors.username && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tighter">{errors.username.message}</p>
+                  <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-tighter">{errors.username.message}</p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Password <span className="text-rose-500">*</span></Label>
+                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Password {editingUser ? "" : <span className="text-rose-500">*</span>}</Label>
                 <div className="relative group">
                   <Input
                     type={showPassword ? "text" : "password"}
@@ -1233,13 +1253,13 @@ export default function SettingsPage() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tighter">{errors.password.message}</p>
+                  <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-tighter">{errors.password.message}</p>
                 )}
               </div>
             </div>
 
-            {/* Contact & Role Row */}
-            <div className="grid grid-cols-2 gap-6">
+            {/* Contact / department / role */}
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
               <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Contact Number {(watch("role") === Role.COORDINATOR || watch("role") === Role.HANDLER) ? "*" : ""}</Label>
                 <Input
@@ -1253,8 +1273,24 @@ export default function SettingsPage() {
                   placeholder="10-digit mobile"
                 />
                 {errors.mobileNumber && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tighter">{errors.mobileNumber.message}</p>
+                  <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-tighter">{errors.mobileNumber.message}</p>
                 )}
+              </div>
+              <div className="space-y-2">
+                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Department</Label>
+                <select
+                  {...register("profileDepartment")}
+                  className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
+                >
+                  <option value="">— None —</option>
+                  {departments
+                    .filter((d) => d.isActive)
+                    .map((d) => (
+                      <option key={d.id} value={d.name}>
+                        {d.name}
+                      </option>
+                    ))}
+                </select>
               </div>
               <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Role <span className="text-rose-500">*</span></Label>
@@ -1289,7 +1325,7 @@ export default function SettingsPage() {
                   ))}
                 </select>
                 {errors.companyId && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tighter">{errors.companyId.message}</p>
+                  <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-tighter">{errors.companyId.message}</p>
                 )}
               </div>
               <div className="space-y-2">
@@ -1308,35 +1344,33 @@ export default function SettingsPage() {
                     ))}
                 </select>
                 {errors.locationId && (
-                  <p className="text-[10px] font-bold text-rose-500 mt-1 uppercase tracking-tighter">{errors.locationId.message}</p>
+                  <p className="text-[10px] font-bold text-red-600 mt-1 uppercase tracking-tighter">{errors.locationId.message}</p>
                 )}
               </div>
             </div>
 
-            {/* Identity Row: Default Avatar (fixed) & Status */}
-            <div className="flex items-center justify-between p-6 rounded-2xl bg-slate-50 border border-slate-200">
-              <div className="flex items-center gap-3">
-                <img
-                  src={DEFAULT_AVATAR_PATH}
-                  alt="Default avatar"
-                  className="w-10 h-10 rounded-full object-cover border border-slate-200 bg-white"
+            {/* Activation */}
+            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
+              <button
+                type="button"
+                onClick={() => setValue("isActive", !watch("isActive"), { shouldDirty: true })}
+                className={cn(
+                  "relative h-7 w-12 shrink-0 rounded-full transition-colors",
+                  watch("isActive") ? "bg-primary" : "bg-muted-foreground/30",
+                )}
+              >
+                <span
+                  className={cn(
+                    "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
+                    watch("isActive") ? "left-[26px]" : "left-0.5",
+                  )}
                 />
-                <div className="leading-tight">
-                  <div className="text-sm font-bold text-slate-800">Profile Avatar</div>
-                  <div className="text-[11px] font-medium text-slate-500">Uses the system default avatar</div>
-                </div>
-              </div>
-
-              <div className="flex flex-col items-end gap-2">
-                <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 mr-1">Account Activation</Label>
-                <label className="relative inline-flex items-center cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    {...register("isActive")}
-                    className="sr-only peer"
-                  />
-                  <div className="w-14 h-7 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-[20px] after:w-[20px] after:transition-all peer-checked:bg-slate-950 shadow-inner"></div>
-                </label>
+              </button>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold">Active</p>
+                <p className="text-xs text-muted-foreground">
+                  Inactive users cannot sign in and won’t appear in handler assignment where applicable.
+                </p>
               </div>
             </div>
           </div>
