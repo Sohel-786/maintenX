@@ -151,6 +151,7 @@ export interface ComplaintListItem {
   raisedByName?: string | null;
   imageUrls?: string[] | null;
   completionPhotoUrl?: string | null;
+  completionImageUrls?: string[] | null;
   createdAt: string;
   updatedAt: string;
 }

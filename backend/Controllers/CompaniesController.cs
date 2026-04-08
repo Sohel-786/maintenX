@@ -526,22 +526,49 @@ namespace net_backend.Controllers
                 var oldLogoUrl = existing.LogoUrl;
                 var newLogoUrl = request.LogoUrl.Trim();
 
-                // If the logo is being removed or replaced, delete the old physical file
+                // If the logo is being removed or replaced, delete the old physical file.
+                // Note: upload returns URLs with cache-buster querystring (?v=...), but the physical
+                // filename is fixed (e.g. `logo.png`). Deleting by URL difference alone can delete the
+                // *newly uploaded* file. So we delete only when old/new physical paths differ.
                 if (!string.IsNullOrWhiteSpace(oldLogoUrl) && oldLogoUrl != newLogoUrl)
                 {
                     try
                     {
                         var webRoot = net_backend.Utils.AttachmentStoragePaths.GetWebRootPath(_env);
+
                         // Strip query-string (cache-buster) and URL-decode path so `%20` maps to real folders on disk.
-                        var urlPathRaw = oldLogoUrl.Contains('?') ? oldLogoUrl[..oldLogoUrl.IndexOf('?')] : oldLogoUrl;
-                        var urlPath = Uri.UnescapeDataString(urlPathRaw ?? string.Empty);
-                        var physicalPath = net_backend.Utils.AttachmentStoragePaths.ToPhysicalPath(webRoot, urlPath);
-                        if (System.IO.File.Exists(physicalPath))
+                        var oldUrlPathRaw = oldLogoUrl.Contains('?') ? oldLogoUrl[..oldLogoUrl.IndexOf('?')] : oldLogoUrl;
+                        var oldUrlPath = Uri.UnescapeDataString(oldUrlPathRaw ?? string.Empty);
+
+                        // When user uploads a new logo, the physical filename is typically the same
+                        // (e.g. logo.png). In that case, we must not delete the new upload.
+                        string? newUrlPhysicalPath;
+                        if (string.IsNullOrWhiteSpace(newLogoUrl))
                         {
-                            System.IO.File.Delete(physicalPath);
+                            newUrlPhysicalPath = null;
+                        }
+                        else
+                        {
+                            var newUrlPathRaw = newLogoUrl.Contains('?') ? newLogoUrl[..newLogoUrl.IndexOf('?')] : newLogoUrl;
+                            var newUrlPath = Uri.UnescapeDataString(newUrlPathRaw ?? string.Empty);
+                            newUrlPhysicalPath = net_backend.Utils.AttachmentStoragePaths.ToPhysicalPath(webRoot, newUrlPath);
+                        }
+
+                        var oldPhysicalPath = net_backend.Utils.AttachmentStoragePaths.ToPhysicalPath(webRoot, oldUrlPath);
+                        var shouldDeleteOld = string.IsNullOrWhiteSpace(newLogoUrl)
+                            ? true
+                            : newUrlPhysicalPath != null &&
+                              !string.Equals(
+                                  Path.GetFullPath(oldPhysicalPath),
+                                  Path.GetFullPath(newUrlPhysicalPath),
+                                  StringComparison.OrdinalIgnoreCase);
+
+                        if (shouldDeleteOld && System.IO.File.Exists(oldPhysicalPath))
+                        {
+                            System.IO.File.Delete(oldPhysicalPath);
 
                             // Best-effort: remove company logo folder if now empty.
-                            var dir = Path.GetDirectoryName(physicalPath);
+                            var dir = Path.GetDirectoryName(oldPhysicalPath);
                             if (!string.IsNullOrWhiteSpace(dir) && Directory.Exists(dir) && !Directory.EnumerateFileSystemEntries(dir).Any())
                                 Directory.Delete(dir, recursive: false);
                         }

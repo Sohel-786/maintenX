@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using net_backend.Data;
@@ -110,20 +111,21 @@ namespace net_backend.Controllers
                     : null,
                 ImageUrls = ParseUrls(c.ImageUrlsJson),
                 CompletionPhotoUrl = c.CompletionPhotoUrl,
+                CompletionImageUrls = ParseUrls(c.CompletionImageUrlsJson),
                 CreatedAt = c.CreatedAt,
                 UpdatedAt = c.UpdatedAt
             };
         }
 
         [HttpPost("attachments")]
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
         public async Task<ActionResult<ApiResponse<object>>> UploadAttachment(IFormFile file)
         {
             if (!await HasPermission("RaiseComplaint") && !await HasPermission("HandleComplaints"))
                 return Forbidden();
             if (file == null || file.Length == 0)
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "No file." });
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Max file size is 5MB." });
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (ext != ".jpg" && ext != ".jpeg" && ext != ".png" && ext != ".webp" && ext != ".gif")
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "Only image files are allowed." });
@@ -171,6 +173,8 @@ namespace net_backend.Controllers
         }
 
         [HttpPost("{id:int}/raised-photo")]
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
         public async Task<ActionResult<ApiResponse<object>>> UploadRaisedPhoto(int id, IFormFile file)
         {
             if (!await HasPermission("RaiseComplaint")) return Forbidden();
@@ -179,8 +183,6 @@ namespace net_backend.Controllers
 
             if (file == null || file.Length == 0)
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "No file." });
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Max file size is 5MB." });
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (!ImageOptimizer.IsImageExtension(ext))
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "Only image files are allowed." });
@@ -212,6 +214,8 @@ namespace net_backend.Controllers
         }
 
         [HttpPost("{id:int}/completion-photo")]
+        [DisableRequestSizeLimit]
+        [RequestFormLimits(MultipartBodyLengthLimit = long.MaxValue)]
         public async Task<ActionResult<ApiResponse<object>>> UploadCompletionPhoto(int id, IFormFile file)
         {
             if (!await HasPermission("HandleComplaints")) return Forbidden();
@@ -220,8 +224,6 @@ namespace net_backend.Controllers
 
             if (file == null || file.Length == 0)
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "No file." });
-            if (file.Length > 5 * 1024 * 1024)
-                return BadRequest(new ApiResponse<object> { Success = false, Message = "Max file size is 5MB." });
             var ext = Path.GetExtension(file.FileName).ToLowerInvariant();
             if (!ImageOptimizer.IsImageExtension(ext))
                 return BadRequest(new ApiResponse<object> { Success = false, Message = "Only image files are allowed." });
@@ -240,7 +242,14 @@ namespace net_backend.Controllers
             }
 
             var url = BuildTicketAssetsUrl(companyId, locationId, departmentId, c.ComplaintNo, c.Id, fileName);
-            c.CompletionPhotoUrl = url;
+            // Backward compatibility: keep the first completion photo in CompletionPhotoUrl
+            if (string.IsNullOrWhiteSpace(c.CompletionPhotoUrl))
+                c.CompletionPhotoUrl = url;
+
+            // New: allow multiple completion attachments (append)
+            var completionUrls = ParseUrls(c.CompletionImageUrlsJson) ?? new List<string>();
+            completionUrls.Add(url);
+            c.CompletionImageUrlsJson = SerializeUrls(completionUrls);
             c.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
 
@@ -511,6 +520,7 @@ namespace net_backend.Controllers
             var from = c.Status;
             c.Status = ComplaintStatus.Assigned;
             c.CompletionPhotoUrl = null;
+            c.CompletionImageUrlsJson = null;
             c.UpdatedAt = DateTime.Now;
 
             var handler = await _context.Users.FindAsync(c.AssignedHandlerUserId);
@@ -573,13 +583,25 @@ namespace net_backend.Controllers
 
                 if (to == ComplaintStatus.Done && from == ComplaintStatus.InProgress)
                 {
-                    if (string.IsNullOrWhiteSpace(request.CompletionPhotoUrl))
-                        return BadRequest(new ApiResponse<ComplaintDetailDto>
+                    // Completion attachments are mandatory for Mark Done.
+                    // New flow uploads one or more completion photos via `/completion-photo` before patching status.
+                    var completionUrls = ParseUrls(c.CompletionImageUrlsJson) ?? new List<string>();
+                    var hasCompletionUploads = completionUrls.Count > 0 || !string.IsNullOrWhiteSpace(c.CompletionPhotoUrl);
+                    if (!hasCompletionUploads)
+                    {
+                        // Legacy fallback: allow passing URL in request, but still store it as the first completion photo.
+                        if (string.IsNullOrWhiteSpace(request.CompletionPhotoUrl))
                         {
-                            Success = false,
-                            Message = "Completion photo URL is required when marking work as done."
-                        });
-                    c.CompletionPhotoUrl = request.CompletionPhotoUrl.Trim();
+                            return BadRequest(new ApiResponse<ComplaintDetailDto>
+                            {
+                                Success = false,
+                                Message = "Completion photo is required when marking work as done."
+                            });
+                        }
+                        c.CompletionPhotoUrl = request.CompletionPhotoUrl.Trim();
+                        completionUrls.Add(c.CompletionPhotoUrl);
+                        c.CompletionImageUrlsJson = SerializeUrls(completionUrls);
+                    }
                 }
 
                 c.Status = to;

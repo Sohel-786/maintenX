@@ -1,7 +1,8 @@
 "use client";
 
 import * as React from "react";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Input } from "./input";
@@ -25,6 +26,8 @@ export interface SearchableSelectProps {
   error?: string;
   className?: string;
   "aria-label"?: string;
+  /** When true, dropdown renders in a fixed-position portal (prevents clipping inside tables/scroll areas). */
+  portal?: boolean;
   /** Optional callback for server-side search. When provided, internal filtering is disabled. */
   onSearchChange?: (term: string) => void;
   /** Optional callback for loading more items (infinite scroll) */
@@ -47,6 +50,7 @@ export function SearchableSelect({
   error,
   className,
   "aria-label": ariaLabel,
+  portal = false,
   onSearchChange,
   onLoadMore,
   hasNextPage,
@@ -59,6 +63,7 @@ export function SearchableSelect({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const filteredOptions = React.useMemo(() => {
     if (onSearchChange) return options; // Server-side filtering
@@ -140,9 +145,11 @@ export function SearchableSelect({
 
   useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
+      const target = e.target as Node;
+      // When dropdown is rendered in a portal (fixed), clicks inside it should NOT close the select.
+      if (containerRef.current?.contains(target)) return;
+      if (dropdownRef.current?.contains(target)) return;
+      setIsOpen(false);
     };
     const handleEscape = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -218,6 +225,32 @@ export function SearchableSelect({
   const listboxId = id ? `${id}-listbox` : "searchable-select-listbox";
   const activeOptionId = id ? `${id}-option-${highlightIndex}` : `searchable-select-option-${highlightIndex}`;
 
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null);
+  const updateDropdownRect = React.useCallback(() => {
+    if (!portal) return;
+    const el = containerRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    setDropdownRect({ top: rect.bottom + 4, left: rect.left, width: Math.max(rect.width, 200) });
+  }, [portal]);
+
+  useLayoutEffect(() => {
+    if (!portal) return;
+    if (isOpen) updateDropdownRect();
+    else setDropdownRect(null);
+  }, [portal, isOpen, updateDropdownRect]);
+
+  useEffect(() => {
+    if (!portal || !isOpen) return;
+    const handleScrollOrResize = () => updateDropdownRect();
+    window.addEventListener("scroll", handleScrollOrResize, true);
+    window.addEventListener("resize", handleScrollOrResize);
+    return () => {
+      window.removeEventListener("scroll", handleScrollOrResize, true);
+      window.removeEventListener("resize", handleScrollOrResize);
+    };
+  }, [portal, isOpen, updateDropdownRect]);
+
   return (
     <div ref={containerRef} className={cn("relative", className)}>
       {label && (
@@ -256,80 +289,161 @@ export function SearchableSelect({
         </svg>
       </button>
 
-      {isOpen && (
-        <div
-          className="absolute z-50 mt-1 w-full rounded-md border border-secondary-200 dark:border-border bg-white dark:bg-card shadow-lg overflow-hidden"
-        >
-          <div className="border-b border-secondary-200 dark:border-border p-2 bg-secondary-50 dark:bg-secondary-900/50">            <div className="relative">
-              <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
-              <Input
-                ref={searchInputRef}
-                type="text"
-                autoComplete="off"
-                value={searchTerm}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setSearchTerm(val);
-                  setHighlightIndex(0);
-                  if (onSearchChange) onSearchChange(val);
-                }}
-                placeholder={searchPlaceholder}
-                className="h-9 pl-8 border-secondary-200 dark:border-secondary-700 bg-white dark:bg-input focus:ring-1 focus:ring-primary-500 shadow-sm font-medium"
-                onKeyDown={handleKeyDown}
-                role="combobox"
-                aria-autocomplete="list"
-                aria-expanded="true"
-                aria-haspopup="listbox"
-                aria-controls={listboxId}
-                aria-activedescendant={activeOptionId}
-              />
-            </div>
-          </div>
-          <ul
-            ref={listRef}
-            id={listboxId}
-            className="max-h-60 overflow-auto py-1"
-            role="listbox"
-            aria-label={label ?? placeholder}
-          >
-            {filteredOptions.length === 0 ? (
-              <li className="px-3 py-2 text-sm text-secondary-500 italic font-medium">No matches</li>
-            ) : (
-              filteredOptions.map((opt, index) => (
-                <li
-                  key={opt.value}
-                  id={id ? `${id}-option-${index}` : `searchable-select-option-${index}`}
-                  role="option"
-                  aria-selected={value === opt.value}
-                  aria-disabled={opt.disabled}
-                  className={cn(
-                    "px-3 py-2 text-sm transition-colors font-medium",
-                    opt.disabled
-                      ? "cursor-not-allowed bg-secondary-50 dark:bg-secondary-900/50 text-secondary-400 dark:text-muted-foreground"
-                      : "cursor-pointer",
-                    !opt.disabled && value === opt.value
-                      ? "bg-primary-50 dark:bg-primary-900/40 text-primary-800 dark:text-primary-300 shadow-sm"
-                      : !opt.disabled && index === highlightIndex
-                        ? "bg-secondary-100 dark:bg-primary-600 text-slate-900 dark:text-white outline-none font-bold"
-                        : !opt.disabled && "text-slate-700 dark:text-secondary-800 hover:bg-secondary-50 dark:hover:bg-primary-600 dark:hover:text-white",
-                  )}
-                  onClick={() => {
-                    selectOption(opt);
+      {isOpen &&
+        (!portal ? (
+          <div className="absolute z-50 mt-1 w-full rounded-md border border-secondary-200 dark:border-border bg-white dark:bg-card shadow-lg overflow-hidden">
+            <div className="border-b border-secondary-200 dark:border-border p-2 bg-secondary-50 dark:bg-secondary-900/50">
+              <div className="relative">
+                <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                <Input
+                  ref={searchInputRef}
+                  type="text"
+                  autoComplete="off"
+                  value={searchTerm}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setSearchTerm(val);
+                    setHighlightIndex(0);
+                    if (onSearchChange) onSearchChange(val);
                   }}
-                  onMouseEnter={() => !opt.disabled && setHighlightIndex(index)}
-                >
-                  {opt.label}
+                  placeholder={searchPlaceholder}
+                  className="h-9 pl-8 border-secondary-200 dark:border-secondary-700 bg-white dark:bg-input focus:ring-1 focus:ring-primary-500 shadow-sm font-medium"
+                  onKeyDown={handleKeyDown}
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="true"
+                  aria-haspopup="listbox"
+                  aria-controls={listboxId}
+                  aria-activedescendant={activeOptionId}
+                />
+              </div>
+            </div>
+            <ul
+              ref={listRef}
+              id={listboxId}
+              className="max-h-60 overflow-auto py-1"
+              role="listbox"
+              aria-label={label ?? placeholder}
+            >
+              {filteredOptions.length === 0 ? (
+                <li className="px-3 py-2 text-sm text-secondary-500 italic font-medium">No matches</li>
+              ) : (
+                filteredOptions.map((opt, index) => (
+                  <li
+                    key={opt.value}
+                    id={id ? `${id}-option-${index}` : `searchable-select-option-${index}`}
+                    role="option"
+                    aria-selected={value === opt.value}
+                    aria-disabled={opt.disabled}
+                    className={cn(
+                      "px-3 py-2 text-sm transition-colors font-medium",
+                      opt.disabled
+                        ? "cursor-not-allowed bg-secondary-50 dark:bg-secondary-900/50 text-secondary-400 dark:text-muted-foreground"
+                        : "cursor-pointer",
+                      !opt.disabled && value === opt.value
+                        ? "bg-primary-50 dark:bg-primary-900/40 text-primary-800 dark:text-primary-300 shadow-sm"
+                        : !opt.disabled && index === highlightIndex
+                          ? "bg-secondary-100 dark:bg-primary-600 text-slate-900 dark:text-white outline-none font-bold"
+                          : !opt.disabled && "text-slate-700 dark:text-secondary-800 hover:bg-secondary-50 dark:hover:bg-primary-600 dark:hover:text-white",
+                    )}
+                    onClick={() => {
+                      selectOption(opt);
+                    }}
+                    onMouseEnter={() => !opt.disabled && setHighlightIndex(index)}
+                  >
+                    {opt.label}
+                  </li>
+                ))
+              )}
+              {hasNextPage && (
+                <li ref={loadMoreRef} className="px-3 py-2 flex justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
                 </li>
-              ))
-            )}
-            {hasNextPage && (
-              <li ref={loadMoreRef} className="px-3 py-2 flex justify-center">
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
-              </li>
-            )}
-          </ul>
-        </div>
-      )}
+              )}
+            </ul>
+          </div>
+        ) : (
+          dropdownRect &&
+          typeof document !== "undefined" &&
+          createPortal(
+            <div
+              ref={dropdownRef}
+              className="fixed z-[9999] max-h-[min(70vh,320px)] min-w-[200px] rounded-md border border-secondary-200 dark:border-border bg-white dark:bg-card shadow-lg overflow-hidden"
+              style={{ top: dropdownRect.top, left: dropdownRect.left, width: dropdownRect.width }}
+            >
+              <div className="border-b border-secondary-200 dark:border-border p-2 bg-secondary-50 dark:bg-secondary-900/50">
+                <div className="relative">
+                  <Search className="absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
+                  <Input
+                    ref={searchInputRef}
+                    type="text"
+                    autoComplete="off"
+                    value={searchTerm}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setSearchTerm(val);
+                      setHighlightIndex(0);
+                      if (onSearchChange) onSearchChange(val);
+                    }}
+                    placeholder={searchPlaceholder}
+                    className="h-9 pl-8 border-secondary-200 dark:border-secondary-700 bg-white dark:bg-input focus:ring-1 focus:ring-primary-500 shadow-sm font-medium"
+                    onKeyDown={handleKeyDown}
+                    role="combobox"
+                    aria-autocomplete="list"
+                    aria-expanded="true"
+                    aria-haspopup="listbox"
+                    aria-controls={listboxId}
+                    aria-activedescendant={activeOptionId}
+                  />
+                </div>
+              </div>
+              <ul
+                ref={listRef}
+                id={listboxId}
+                className="max-h-60 overflow-auto py-1"
+                role="listbox"
+                aria-label={label ?? placeholder}
+              >
+                {filteredOptions.length === 0 ? (
+                  <li className="px-3 py-2 text-sm text-secondary-500 italic font-medium">No matches</li>
+                ) : (
+                  filteredOptions.map((opt, index) => (
+                    <li
+                      key={opt.value}
+                      id={id ? `${id}-option-${index}` : `searchable-select-option-${index}`}
+                      role="option"
+                      aria-selected={value === opt.value}
+                      aria-disabled={opt.disabled}
+                      className={cn(
+                        "px-3 py-2 text-sm transition-colors font-medium",
+                        opt.disabled
+                          ? "cursor-not-allowed bg-secondary-50 dark:bg-secondary-900/50 text-secondary-400 dark:text-muted-foreground"
+                          : "cursor-pointer",
+                        !opt.disabled && value === opt.value
+                          ? "bg-primary-50 dark:bg-primary-900/40 text-primary-800 dark:text-primary-300 shadow-sm"
+                          : !opt.disabled && index === highlightIndex
+                            ? "bg-secondary-100 dark:bg-primary-600 text-slate-900 dark:text-white outline-none font-bold"
+                            : !opt.disabled && "text-slate-700 dark:text-secondary-800 hover:bg-secondary-50 dark:hover:bg-primary-600 dark:hover:text-white",
+                      )}
+                      onClick={() => {
+                        selectOption(opt);
+                      }}
+                      onMouseEnter={() => !opt.disabled && setHighlightIndex(index)}
+                    >
+                      {opt.label}
+                    </li>
+                  ))
+                )}
+                {hasNextPage && (
+                  <li ref={loadMoreRef} className="px-3 py-2 flex justify-center">
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-600 border-t-transparent" />
+                  </li>
+                )}
+              </ul>
+            </div>,
+            document.body,
+          )
+        ))}
 
       {error && (
         <p className="text-sm font-medium text-rose-500 mt-1" role="alert">{error}</p>

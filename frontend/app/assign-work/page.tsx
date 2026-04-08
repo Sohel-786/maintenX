@@ -13,7 +13,8 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { formatDateTime } from "@/lib/utils";
 import { TicketDetailDialog } from "@/components/mx/ticket-detail-dialog";
 import { Search, X } from "lucide-react";
 import { PageSizeSelect } from "@/components/ui/page-size-select";
@@ -43,7 +44,7 @@ export default function AssignWorkPage() {
   const [pageSizeUn, setPageSizeUn] = useState(25);
   const [pageSizeActive, setPageSizeActive] = useState(25);
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [handlerPick, setHandlerPick] = useState<Record<number, string>>({});
+  const [handlerPick, setHandlerPick] = useState<Record<number, number | string | "">>({});
 
   useEffect(() => {
     setPageUn(1);
@@ -72,6 +73,16 @@ export default function AssignWorkPage() {
     },
     enabled: !!permissions?.assignComplaints,
   });
+
+  const handlerLabel = (h: { firstName?: string | null; lastName?: string | null; id: number }) => {
+    const name = `${h.firstName ?? ""} ${h.lastName ?? ""}`.replace(/\s+/g, " ").trim();
+    return name || `Handler #${h.id}`;
+  };
+
+  const handlerOptions = handlers.map((h) => ({
+    value: h.id,
+    label: handlerLabel(h),
+  }));
 
   const unParams = {
     search: debouncedSearchUn.trim() || undefined,
@@ -207,6 +218,10 @@ export default function AssignWorkPage() {
                   className="cursor-pointer border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
                   onClick={() => setDetailId(r.id)}
                 >
+                  {/*
+                    For reassign flows: do not show the currently assigned handler in the picker.
+                    (Backend also allows reassignment, but UX should guide the user.)
+                  */}
                   <td className="px-4 py-3 text-center text-secondary-500">
                     {total - (page - 1) * pageSize - idx}
                   </td>
@@ -224,25 +239,32 @@ export default function AssignWorkPage() {
                       className="px-4 py-2 align-middle"
                       onClick={(e) => e.stopPropagation()}
                     >
+                      {(() => {
+                        const currentAssignedId = r.assignedHandlerUserId ?? null;
+                        const optionsForRow =
+                          currentAssignedId == null
+                            ? handlerOptions
+                            : handlerOptions.filter((o) => Number(o.value) !== currentAssignedId);
+                        const pickerDisabled = optionsForRow.length === 0;
+                        return (
                       <div className="flex flex-wrap items-center gap-2">
-                        <select
-                          className="h-9 max-w-[140px] rounded-md border border-secondary-200 bg-white px-2 text-xs"
-                          value={handlerPick[r.id] ?? ""}
-                          onChange={(e) =>
-                            setHandlerPick((prev) => ({ ...prev, [r.id]: e.target.value }))
-                          }
-                        >
-                          <option value="">Handler…</option>
-                          {handlers.map((h) => (
-                            <option key={h.id} value={h.id}>
-                              {h.firstName} {h.lastName}
-                            </option>
-                          ))}
-                        </select>
+                        <div className="w-[200px]">
+                          <SearchableSelect
+                            options={optionsForRow}
+                            value={handlerPick[r.id] ?? ""}
+                            onChange={(v) => setHandlerPick((prev) => ({ ...prev, [r.id]: v }))}
+                            placeholder={pickerDisabled ? "No other handlers" : "Handler…"}
+                            searchPlaceholder="Search handler…"
+                            className="h-9 text-xs"
+                            aria-label="Select handler"
+                            portal
+                            disabled={pickerDisabled}
+                          />
+                        </div>
                         <Button
                           size="sm"
                           className="h-9 text-xs"
-                          disabled={!handlerPick[r.id] || assignMutation.isPending}
+                          disabled={pickerDisabled || !handlerPick[r.id] || assignMutation.isPending}
                           onClick={() => {
                             const hid = Number(handlerPick[r.id]);
                             if (!hid) return;
@@ -252,10 +274,12 @@ export default function AssignWorkPage() {
                           Apply
                         </Button>
                       </div>
+                        );
+                      })()}
                     </td>
                   )}
                   <td className="px-4 py-3 text-xs text-secondary-500">
-                    {format(new Date(r.updatedAt), "dd MMM yyyy HH:mm")}
+                    {formatDateTime(r.updatedAt)}
                   </td>
                 </tr>
               ))

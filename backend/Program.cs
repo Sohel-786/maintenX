@@ -4,6 +4,8 @@
 
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Server.IIS;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -36,6 +38,16 @@ builder.Services.AddScoped<IExcelService, ExcelService>();
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Allow large multipart uploads (images are optimized server-side before storing).
+builder.Services.Configure<FormOptions>(o =>
+{
+    o.MultipartBodyLengthLimit = long.MaxValue;
+    o.ValueLengthLimit = int.MaxValue;
+    o.MultipartHeadersLengthLimit = int.MaxValue;
+});
+builder.WebHost.ConfigureKestrel(o => { o.Limits.MaxRequestBodySize = null; });
+builder.Services.Configure<IISServerOptions>(o => { o.MaxRequestBodySize = null; });
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key is not configured.");

@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useMemo, useState } from 'react';
 import { User } from '@/types';
 import { Avatar } from '@/components/ui/avatar';
 import { useAppSettings, useCurrentUserPermissions, useCompany } from '@/hooks/use-settings';
@@ -31,16 +32,45 @@ export function Header({ user, isNavExpanded, onNavExpandChange }: HeaderProps) 
     ? pairs.find((p) => p.companyId === selected.companyId && p.locationId === selected.locationId)
     : null;
 
-  // Prioritize the fresh company logo from the API once loaded. 
+  // Prioritize the fresh company logo from the API once loaded.
   // Fallback to currentPair.companyLogo only during the initial load of the Company query.
-  const logoPath = !isCompanyLoading && currentCompany !== undefined
-    ? currentCompany.logoUrl
-    : currentPair?.companyLogo;
+  const logoPath = !isCompanyLoading && currentCompany !== undefined ? currentCompany.logoUrl : currentPair?.companyLogo;
 
-  const logoUrl = logoPath 
-    ? (logoPath.startsWith("http") || logoPath.startsWith("blob:") ? logoPath : (logoPath.startsWith("/") ? logoPath : `/${logoPath}`))
-    : null;
-  const hasLogo = Boolean(logoUrl);
+  const resolvedLogoUrl = useMemo(() => {
+    if (!logoPath) return null;
+    const normalized = logoPath.replace(/\\/g, '/');
+    if (normalized.startsWith('http') || normalized.startsWith('blob:')) return normalized;
+    if (normalized.startsWith('/')) return normalized;
+    return `/${normalized}`;
+  }, [logoPath]);
+
+  const decodedAltLogoUrl = useMemo(() => {
+    if (!resolvedLogoUrl) return null;
+    const [pathPart, queryPart] = resolvedLogoUrl.split('?');
+    if (!pathPart.includes('%')) return null;
+    try {
+      const decodedPath = decodeURIComponent(pathPart);
+      if (decodedPath === pathPart) return null;
+      return queryPart ? `${decodedPath}?${queryPart}` : decodedPath;
+    } catch {
+      return null;
+    }
+  }, [resolvedLogoUrl]);
+
+  const logoCandidates = useMemo(() => {
+    const arr: string[] = [];
+    if (resolvedLogoUrl) arr.push(resolvedLogoUrl);
+    if (decodedAltLogoUrl && decodedAltLogoUrl !== resolvedLogoUrl) arr.push(decodedAltLogoUrl);
+    return arr;
+  }, [resolvedLogoUrl, decodedAltLogoUrl]);
+
+  const [logoTryIndex, setLogoTryIndex] = useState(0);
+  useEffect(() => {
+    setLogoTryIndex(0);
+  }, [logoCandidates.join('|')]);
+
+  const logoUrlToRender = logoCandidates[logoTryIndex] ?? null;
+  const hasLogo = Boolean(logoUrlToRender);
   const hasMultipleLocations = pairs.length > 1;
 
   const isHorizontal = permissions?.navigationLayout === 'HORIZONTAL';
@@ -65,12 +95,18 @@ export function Header({ user, isNavExpanded, onNavExpandChange }: HeaderProps) 
         {hasLogo ? (
           <div className="flex items-center shrink-0 bg-transparent">
             <img
-              src={logoUrl!}
+              src={logoUrlToRender!}
               alt=""
               className={isHorizontal
                 ? "max-w-[85px] max-h-[52px] w-auto h-auto object-contain object-center"
                 : "max-w-[110px] max-h-[72px] w-auto h-auto object-contain object-center"
               }
+              onError={() => {
+                setLogoTryIndex((idx) => {
+                  if (idx + 1 < logoCandidates.length) return idx + 1;
+                  return logoCandidates.length; // force fallback to icon
+                });
+              }}
             />
           </div>
         ) : (

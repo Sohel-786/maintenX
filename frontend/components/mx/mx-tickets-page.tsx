@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useRef, useState, useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -11,13 +11,16 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { format } from "date-fns";
+import { formatDateTime } from "@/lib/utils";
 import { TicketDetailDialog } from "./ticket-detail-dialog";
+import { Dialog } from "@/components/ui/dialog";
 import { Search, X } from "lucide-react";
 import { PageSizeSelect } from "@/components/ui/page-size-select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { PAGINATION_VISIBLE_THRESHOLD } from "@/lib/pagination";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { toast } from "react-hot-toast";
+import { CompletionAttachmentsDialog } from "./completion-attachments-dialog";
 
 const filterLabelClass = "text-[11px] font-medium text-secondary-500 uppercase tracking-wider mb-1 block";
 
@@ -29,6 +32,7 @@ export function MxTicketsPage({
   showCompanyColumn = false,
   showRaiseLink = false,
   queryKeySuffix = "list",
+  rowActions,
 }: {
   title: string;
   subtitle?: string;
@@ -37,8 +41,10 @@ export function MxTicketsPage({
   showCompanyColumn?: boolean;
   showRaiseLink?: boolean;
   queryKeySuffix?: string;
+  rowActions?: "handlerWork";
 }) {
   const { data: permissions } = useCurrentUserPermissions();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const urlStatusRaw = searchParams.get("status");
   const urlStatus =
@@ -55,6 +61,14 @@ export function MxTicketsPage({
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [detailId, setDetailId] = useState<number | null>(null);
+
+  const isHandlerWorkActions = rowActions === "handlerWork" && !!permissions?.handleComplaints;
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
+  const [completionDialogTargetId, setCompletionDialogTargetId] = useState<number | null>(null);
+
+  const [confirmAction, setConfirmAction] = useState<null | { id: number; type: "accept" | "start" | "done"; label: string }>(null);
+  const confirmCancelRef = useRef<HTMLButtonElement | null>(null);
+  const confirmOkRef = useRef<HTMLButtonElement | null>(null);
 
   useEffect(() => {
     if (lockStatus) return;
@@ -116,7 +130,48 @@ export function MxTicketsPage({
     categoryId !== "" ||
     (!lockStatus && localStatus !== "");
 
-  const colCount = (showCompanyColumn ? 1 : 0) + 7;
+  const colCount = (showCompanyColumn ? 1 : 0) + 7 + (isHandlerWorkActions ? 1 : 0);
+
+  const invalidate = () => {
+    queryClient.invalidateQueries({ queryKey: ["complaints"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-metrics"] });
+    queryClient.invalidateQueries({ queryKey: ["mx-sidebar-counts"] });
+  };
+
+  const statusMutation = useMutation({
+    mutationFn: async ({ id, status }: { id: number; status: ComplaintStatus }) => {
+      await api.patch(`/complaints/${id}/status`, { status });
+    },
+    onSuccess: () => {
+      invalidate();
+      toast.success("Updated");
+    },
+    onError: (e: unknown) =>
+      toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message || "Update failed"),
+  });
+
+  const openConfirm = (a: { id: number; type: "accept" | "start" | "done"; label: string }) => {
+    setConfirmAction(a);
+    setTimeout(() => confirmCancelRef.current?.focus(), 50);
+  };
+
+  const closeConfirm = () => setConfirmAction(null);
+
+  const confirmTitle = confirmAction
+    ? confirmAction.type === "accept"
+      ? "Accept ticket?"
+      : confirmAction.type === "start"
+        ? "Start work on ticket?"
+        : "Mark ticket as done?"
+    : "";
+
+  const confirmDescription = confirmAction
+    ? confirmAction.type === "accept"
+      ? "This will move the ticket to Accepted status."
+      : confirmAction.type === "start"
+        ? "This will move the ticket to In progress status."
+        : "You will be asked to upload completion photos (mandatory) to mark it as Done."
+    : "";
 
   return (
     <div className="p-6">
@@ -220,6 +275,11 @@ export function MxTicketsPage({
                 <th className="px-4 py-3 font-semibold">Dept</th>
                 <th className="px-4 py-3 font-semibold">Status</th>
                 <th className="px-4 py-3 font-semibold">Handler</th>
+                {isHandlerWorkActions && (
+                  <th className="px-4 py-3 font-semibold text-right w-[140px]">
+                    Actions
+                  </th>
+                )}
                 <th className="px-4 py-3 font-semibold">Updated</th>
               </tr>
             </thead>
@@ -259,8 +319,44 @@ export function MxTicketsPage({
                       </span>
                     </td>
                     <td className="px-4 py-3">{r.assignedHandlerName ?? "—"}</td>
+                    {isHandlerWorkActions && (
+                      <td className="px-4 py-2 text-right align-middle" onClick={(e) => e.stopPropagation()}>
+                        {r.status === ComplaintStatus.Assigned ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-[118px] justify-center text-xs font-bold bg-sky-600 text-white hover:bg-sky-700"
+                            disabled={statusMutation.isPending}
+                            onClick={() => openConfirm({ id: r.id, type: "accept", label: "Accept" })}
+                          >
+                            Accept
+                          </Button>
+                        ) : r.status === ComplaintStatus.Accepted ? (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-8 w-[118px] justify-center text-xs font-bold bg-orange-600 text-white hover:bg-orange-700"
+                            disabled={statusMutation.isPending}
+                            onClick={() => openConfirm({ id: r.id, type: "start", label: "Start work" })}
+                          >
+                            Start work
+                          </Button>
+                        ) : r.status === ComplaintStatus.InProgress ? (
+                          <Button
+                            size="sm"
+                            className="h-8 w-[118px] justify-center text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700"
+                            disabled={statusMutation.isPending}
+                            onClick={() => openConfirm({ id: r.id, type: "done", label: "Mark done" })}
+                          >
+                            Mark done
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-secondary-400">—</span>
+                        )}
+                      </td>
+                    )}
                     <td className="px-4 py-3 text-xs text-secondary-500">
-                      {format(new Date(r.updatedAt), "dd MMM yyyy HH:mm")}
+                      {formatDateTime(r.updatedAt)}
                     </td>
                   </tr>
                 ))
@@ -274,6 +370,79 @@ export function MxTicketsPage({
       </Card>
 
       <TicketDetailDialog detailId={detailId} onClose={() => setDetailId(null)} />
+
+      {/* Confirm dialog for handler actions (keyboard accessible) */}
+      <Dialog
+        isOpen={confirmAction != null}
+        onClose={closeConfirm}
+        title={confirmTitle}
+        size="sm"
+        closeOnBackdropClick
+      >
+        <div
+          className="space-y-5"
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              e.preventDefault();
+              const active = document.activeElement;
+              if (active === confirmCancelRef.current) confirmOkRef.current?.focus();
+              else confirmCancelRef.current?.focus();
+            }
+          }}
+        >
+          <p className="text-sm text-secondary-600 leading-relaxed">{confirmDescription}</p>
+          <div className="flex gap-3">
+            <Button
+              ref={confirmCancelRef}
+              type="button"
+              variant="outline"
+              className="flex-1 font-semibold"
+              onClick={closeConfirm}
+            >
+              Cancel
+            </Button>
+            <Button
+              ref={confirmOkRef}
+              type="button"
+              className={[
+                "flex-1 font-semibold text-white",
+                confirmAction?.type === "accept"
+                  ? "bg-sky-600 hover:bg-sky-700"
+                  : confirmAction?.type === "start"
+                    ? "bg-orange-600 hover:bg-orange-700"
+                    : "bg-emerald-600 hover:bg-emerald-700",
+              ].join(" ")}
+              onClick={() => {
+                if (!confirmAction) return;
+                const { id, type } = confirmAction;
+                closeConfirm();
+                if (type === "accept") statusMutation.mutate({ id, status: ComplaintStatus.Accepted });
+                else if (type === "start") statusMutation.mutate({ id, status: ComplaintStatus.InProgress });
+                else {
+                  setCompletionDialogTargetId(id);
+                  setCompletionDialogOpen(true);
+                }
+              }}
+            >
+              {confirmAction?.label ?? "Confirm"}
+            </Button>
+          </div>
+        </div>
+      </Dialog>
+
+      {isHandlerWorkActions && (
+        <CompletionAttachmentsDialog
+          open={completionDialogOpen}
+          onClose={() => {
+            setCompletionDialogOpen(false);
+            setCompletionDialogTargetId(null);
+          }}
+          complaintId={completionDialogTargetId}
+          onCompleted={async () => {
+            invalidate();
+          }}
+        />
+      )}
     </div>
   );
 }

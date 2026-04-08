@@ -39,8 +39,11 @@ export function RaiseTicketDialog({
   const [pendingPhotoFiles, setPendingPhotoFiles] = useState<File[]>([]);
   const [attachmentsOpen, setAttachmentsOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const cameraRef = useRef<CameraPhotoInputRef>(null);
+  const discardKeepRef = useRef<HTMLButtonElement | null>(null);
+  const discardDiscardRef = useRef<HTMLButtonElement | null>(null);
 
   const form = useForm<RaiseTicketFormValues>({
     resolver: zodResolver(schema),
@@ -52,6 +55,7 @@ export function RaiseTicketDialog({
   });
 
   const effectiveAttachmentCount = pendingPhotoFiles.length;
+  const isDirty = form.formState.isDirty || pendingPhotoFiles.length > 0;
 
   useEffect(() => {
     if (!open) return;
@@ -61,7 +65,14 @@ export function RaiseTicketDialog({
       description: "",
     });
     setPendingPhotoFiles([]);
+    setDiscardConfirmOpen(false);
   }, [open, form]);
+
+  useEffect(() => {
+    if (!discardConfirmOpen) return;
+    const t = setTimeout(() => discardKeepRef.current?.focus(), 30);
+    return () => clearTimeout(t);
+  }, [discardConfirmOpen]);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["complaint-categories"],
@@ -127,19 +138,32 @@ export function RaiseTicketDialog({
 
   if (!permissions?.raiseComplaint) return null;
 
+  const closeNow = () => {
+    if (mutation.isPending) return;
+    setPendingPhotoFiles([]);
+    setAttachmentsOpen(false);
+    setIsDragging(false);
+    setDiscardConfirmOpen(false);
+    onClose();
+  };
+
+  const requestClose = () => {
+    if (mutation.isPending) return;
+    if (isDirty) {
+      setDiscardConfirmOpen(true);
+      return;
+    }
+    closeNow();
+  };
+
   return (
     <Dialog
       isOpen={open}
-      onClose={() => {
-        if (!mutation.isPending) onClose();
-      }}
+      onClose={requestClose}
       title="Raise ticket"
       size="lg"
       contentScroll
-      confirmOnEscWhenDirty={form.formState.isDirty || pendingPhotoFiles.length > 0}
-      isDirty={form.formState.isDirty || pendingPhotoFiles.length > 0}
-      escConfirmTitle="Discard ticket?"
-      escConfirmDescription="You have unsaved changes. Close without saving?"
+      closeButtonDisabled={mutation.isPending}
     >
       <form
         className="flex min-h-0 flex-1 flex-col"
@@ -277,7 +301,7 @@ export function RaiseTicketDialog({
           </div>
         </div>
         <div className="mt-4 flex shrink-0 justify-end gap-2 border-t border-secondary-100 pt-4">
-          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onClose()}>
+          <Button type="button" variant="outline" disabled={mutation.isPending} onClick={requestClose}>
             Cancel
           </Button>
           <Button type="submit" disabled={mutation.isPending}>
@@ -297,6 +321,51 @@ export function RaiseTicketDialog({
         isEditing={false}
         title="Ticket photo attachments"
       />
+
+      <Dialog
+        isOpen={discardConfirmOpen}
+        onClose={() => setDiscardConfirmOpen(false)}
+        title="Discard ticket draft?"
+        size="sm"
+        closeOnBackdropClick
+        lockScroll={false}
+      >
+        <div
+          className="space-y-5"
+          onKeyDown={(e) => {
+            if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+              e.preventDefault();
+              const active = document.activeElement;
+              if (active === discardKeepRef.current) discardDiscardRef.current?.focus();
+              else discardKeepRef.current?.focus();
+            }
+          }}
+        >
+          <p className="text-sm text-secondary-600 leading-relaxed">
+            You have unsaved changes{pendingPhotoFiles.length > 0 ? ` and ${pendingPhotoFiles.length} attachment${pendingPhotoFiles.length === 1 ? "" : "s"}` : ""}.
+            If you close now, this information will be lost.
+          </p>
+          <div className="flex gap-3">
+            <Button
+              ref={discardKeepRef}
+              type="button"
+              variant="outline"
+              className="flex-1 font-semibold"
+              onClick={() => setDiscardConfirmOpen(false)}
+            >
+              Keep editing
+            </Button>
+            <Button
+              ref={discardDiscardRef}
+              type="button"
+              className="flex-1 font-semibold bg-rose-600 text-white hover:bg-rose-700"
+              onClick={closeNow}
+            >
+              Discard
+            </Button>
+          </div>
+        </div>
+      </Dialog>
     </Dialog>
   );
 }

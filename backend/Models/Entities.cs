@@ -147,6 +147,8 @@ namespace net_backend.Models
         public string? ImageUrlsJson { get; set; }
         [Column(TypeName = "nvarchar(max)")]
         public string? CompletionPhotoUrl { get; set; }
+        [Column(TypeName = "nvarchar(max)")]
+        public string? CompletionImageUrlsJson { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 

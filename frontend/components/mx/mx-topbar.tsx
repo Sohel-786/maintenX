@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
 import { User, Role } from "@/types";
 import { useAppSettings, useCompany, useCurrentUserPermissions } from "@/hooks/use-settings";
 import { useLocationContext } from "@/contexts/location-context";
@@ -39,15 +40,44 @@ export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?
 
   const brand = appSettings?.softwareName?.trim() || "MaintenX";
 
-  // Fresh company logo from the API
-  const logoPath = !isCompanyLoading && currentCompany !== undefined
-    ? currentCompany.logoUrl
-    : currentPair?.companyLogo;
+  // Fresh company logo from the API (fallback to allowed-location data)
+  const logoPath = !isCompanyLoading && currentCompany !== undefined ? currentCompany.logoUrl : currentPair?.companyLogo;
 
-  const logoUrl = logoPath 
-    ? (logoPath.startsWith("http") || logoPath.startsWith("blob:") ? logoPath : (logoPath.startsWith("/") ? logoPath : `/${logoPath}`))
-    : null;
-  const hasLogo = Boolean(logoUrl);
+  const resolvedLogoUrl = useMemo(() => {
+    if (!logoPath) return null;
+    const normalized = logoPath.replace(/\\/g, "/");
+    if (normalized.startsWith("http") || normalized.startsWith("blob:")) return normalized;
+    if (normalized.startsWith("/")) return normalized;
+    return `/${normalized}`;
+  }, [logoPath]);
+
+  const decodedAltLogoUrl = useMemo(() => {
+    if (!resolvedLogoUrl) return null;
+    const [pathPart, queryPart] = resolvedLogoUrl.split("?");
+    if (!pathPart.includes("%")) return null;
+    try {
+      const decodedPath = decodeURIComponent(pathPart);
+      if (decodedPath === pathPart) return null;
+      return queryPart ? `${decodedPath}?${queryPart}` : decodedPath;
+    } catch {
+      return null;
+    }
+  }, [resolvedLogoUrl]);
+
+  const logoCandidates = useMemo(() => {
+    const arr: string[] = [];
+    if (resolvedLogoUrl) arr.push(resolvedLogoUrl);
+    if (decodedAltLogoUrl && decodedAltLogoUrl !== resolvedLogoUrl) arr.push(decodedAltLogoUrl);
+    return arr;
+  }, [resolvedLogoUrl, decodedAltLogoUrl]);
+
+  const [logoTryIndex, setLogoTryIndex] = useState(0);
+  useEffect(() => {
+    setLogoTryIndex(0);
+  }, [logoCandidates.join("|")]);
+
+  const logoUrlToRender = logoCandidates[logoTryIndex] ?? null;
+  const hasLogo = Boolean(logoUrlToRender);
 
   const isHorizontal = permissions?.navigationLayout === 'HORIZONTAL';
 
@@ -60,9 +90,15 @@ export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?
         {hasLogo ? (
           <div className="flex items-center shrink-0 bg-transparent">
             <img
-              src={logoUrl!}
+              src={logoUrlToRender!}
               alt=""
               className="max-h-[72px] max-w-[140px] w-auto h-auto object-contain object-center"
+              onError={() => {
+                setLogoTryIndex((idx) => {
+                  if (idx + 1 < logoCandidates.length) return idx + 1;
+                  return logoCandidates.length; // force fallback to icon
+                });
+              }}
             />
           </div>
         ) : (

@@ -16,6 +16,7 @@ export default function MyWorkPage() {
       title="My work queue"
       subtitle="Tickets assigned to you at this location."
       queryKeySuffix="work"
+      rowActions="handlerWork"
     />
   );
 }

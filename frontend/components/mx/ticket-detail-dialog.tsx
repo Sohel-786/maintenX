@@ -9,10 +9,10 @@ import { useCurrentUser } from "@/hooks/use-current-user";
 import { Dialog } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
-import { format } from "date-fns";
-import { FullScreenImageViewer } from "@/components/ui/full-screen-image-viewer";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { AttachmentListDialog } from "@/components/ui/attachment-list-dialog";
 import { Building2, MapPin, Tags, Layers, User as UserIcon, Wrench, X, CalendarDays, Activity, CheckCircle2, AlertCircle } from "lucide-react";
+import { CompletionAttachmentsDialog } from "./completion-attachments-dialog";
 
 function statusMeta(status: ComplaintStatus) {
   switch (status) {
@@ -60,11 +60,6 @@ function InfoTile({
   );
 }
 
-function assetUrl(path: string) {
-  if (path.startsWith("http") || path.startsWith("blob:")) return path;
-  return path.startsWith("/") ? path : `/${path}`;
-}
-
 export function TicketDetailDialog({
   detailId,
   onClose,
@@ -76,10 +71,11 @@ export function TicketDetailDialog({
   const { user } = useCurrentUser();
   const queryClient = useQueryClient();
   const [assignHandlerId, setAssignHandlerId] = useState("");
-  const [completionFile, setCompletionFile] = useState<File | null>(null);
-  const [imageViewerOpen, setImageViewerOpen] = useState(false);
-  const [imageViewerSrc, setImageViewerSrc] = useState<string | null>(null);
-  const [attachmentsOpen, setAttachmentsOpen] = useState(false);
+  const [attachmentsState, setAttachmentsState] = useState<{ open: boolean; type: "raised" | "completion" }>({
+    open: false,
+    type: "raised",
+  });
+  const [completionDialogOpen, setCompletionDialogOpen] = useState(false);
 
   const { data: detail } = useQuery({
     queryKey: ["complaint", detailId],
@@ -137,38 +133,23 @@ export function TicketDetailDialog({
       id,
       status,
       message,
-      completionPhotoUrl,
     }: {
       id: number;
       status: ComplaintStatus;
       message?: string;
-      completionPhotoUrl?: string;
     }) => {
-      await api.patch(`/complaints/${id}/status`, { status, message, completionPhotoUrl });
+      await api.patch(`/complaints/${id}/status`, { status, message });
     },
     onSuccess: () => {
       invalidate();
-      setCompletionFile(null);
       toast.success("Updated");
     },
     onError: (e: unknown) =>
       toast.error((e as { response?: { data?: { message?: string } } }).response?.data?.message || "Update failed"),
   });
 
-  const uploadCompletion = async (): Promise<string | null> => {
-    if (!completionFile) return null;
-    const fd = new FormData();
-    fd.append("file", completionFile);
-    const res = await api.post(`/complaints/${detailId}/completion-photo`, fd, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-    const url = (res.data?.data as { url?: string })?.url;
-    return url ?? null;
-  };
-
   const handleClose = () => {
     setAssignHandlerId("");
-    setCompletionFile(null);
     onClose();
   };
 
@@ -182,6 +163,12 @@ export function TicketDetailDialog({
 
   const isHandler = !!permissions?.handleComplaints && detail?.assignedHandlerUserId === user?.id;
 
+  const canReopen =
+    !!permissions?.assignComplaints &&
+    !!detail &&
+    (((detail.status as ComplaintStatus) === ComplaintStatus.Done ||
+      (detail.status as ComplaintStatus) === ComplaintStatus.Closed));
+
   return (
     <Dialog
       isOpen={detailId != null}
@@ -193,9 +180,9 @@ export function TicketDetailDialog({
       contentScroll={false}
     >
       {detail && (
-        <div className="flex flex-col h-full overflow-hidden">
+        <div className="flex max-h-[85vh] min-h-0 flex-col overflow-hidden">
           {/* Custom Header with Gradient - Touches all edges */}
-          <div className="bg-gradient-to-r from-primary-700 via-primary-600 to-primary-800 px-7 py-6 text-white shadow-lg shrink-0">
+          <div className="shrink-0 bg-gradient-to-r from-primary-700 via-primary-600 to-primary-800 px-6 py-4 text-white shadow-lg">
             <div className="flex items-start justify-between gap-4">
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-3">
@@ -213,10 +200,10 @@ export function TicketDetailDialog({
                 <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs font-semibold text-white/80">
                   <span className="inline-flex items-center gap-1.5">
                     <CalendarDays className="h-3.5 w-3.5" />
-                    {format(new Date(detail.createdAt), "dd MMM yyyy")}
+                    {formatDate(detail.createdAt)}
                   </span>
                 </div>
-                <div className="mt-3 text-sm font-bold text-white">
+                <div className="mt-2 text-sm font-bold text-white">
                   {detail.categoryName ?? "Uncategorized"} 
                   <span className="mx-2 text-white/50">→</span> 
                   {detail.departmentName ?? "General"}
@@ -236,7 +223,7 @@ export function TicketDetailDialog({
           </div>
 
           {/* Scrolling Content Area */}
-          <div className="flex-1 overflow-y-auto space-y-7 p-7">
+          <div className="min-h-0 flex-1 overflow-y-auto space-y-5 p-6">
             <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
               <InfoTile icon={Building2} label="Company" value={detail.companyName ?? "—"} iconClassName="text-sky-700" />
               <InfoTile icon={MapPin} label="Location" value={detail.locationName ?? "—"} iconClassName="text-indigo-700" />
@@ -246,7 +233,7 @@ export function TicketDetailDialog({
               <InfoTile icon={Wrench} label="Handler" value={detail.assignedHandlerName ?? "—"} iconClassName="text-orange-700" />
             </div>
 
-            <div className="rounded-2xl border border-secondary-100 bg-white p-5 shadow-sm">
+            <div className="rounded-2xl border border-secondary-100 bg-white p-4 shadow-sm">
               <div className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">Issue description</div>
               <div className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-secondary-900">
                 {detail.description}
@@ -255,22 +242,7 @@ export function TicketDetailDialog({
 
           {/* Raised attachments are shown in timeline (View button with count). */}
 
-          {detail.completionPhotoUrl && (
-            <div>
-              <div className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">Completion photo</div>
-              <button
-                type="button"
-                className="mt-3 block w-full overflow-hidden rounded-2xl border border-secondary-100 bg-secondary-50"
-                onClick={() => {
-                  setImageViewerSrc(assetUrl(detail.completionPhotoUrl!));
-                  setImageViewerOpen(true);
-                }}
-              >
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={assetUrl(detail.completionPhotoUrl)} alt="Completion" className="max-h-56 w-full object-contain" />
-              </button>
-            </div>
-          )}
+          {/* Completion attachments are shown in timeline (View button with count). */}
 
           {canAssign && (
             <div className="rounded-2xl border border-secondary-100 bg-white p-4 shadow-sm">
@@ -313,49 +285,29 @@ export function TicketDetailDialog({
               </Button>
             )}
             {detail.status === ComplaintStatus.InProgress && isHandler && (
-              <div className="flex w-full flex-col gap-2 sm:flex-row sm:items-end">
-                <div className="flex-1">
-                  <label className="text-xs" style={{ color: "var(--mx-muted)" }}>
-                    Completion photo (required to mark done)
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="mt-1 block w-full text-sm"
-                    onChange={(e) => setCompletionFile(e.target.files?.[0] ?? null)}
-                  />
-                </div>
-                <Button
-                  disabled={statusMutation.isPending}
-                  onClick={async () => {
-                    try {
-                      const url = await uploadCompletion();
-                      if (!url) {
-                        toast.error("Choose a completion photo");
-                        return;
-                      }
-                      statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Done, completionPhotoUrl: url });
-                    } catch {
-                      toast.error("Upload failed");
-                    }
-                  }}
-                >
-                  Mark done
-                </Button>
-              </div>
+              <Button
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+                disabled={statusMutation.isPending}
+                onClick={() => setCompletionDialogOpen(true)}
+              >
+                Mark done
+              </Button>
             )}
             {detail.status === ComplaintStatus.Done && permissions?.assignComplaints && (
               <Button variant="outline" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Closed })}>
                 Close ticket
               </Button>
             )}
-            {(detail.status === ComplaintStatus.Done || detail.status === ComplaintStatus.Closed) &&
-              permissions?.assignComplaints && (
-                <Button variant="secondary" disabled={reopenMutation.isPending} onClick={() => reopenMutation.mutate(detail.id)}>
-                  Reopen for handler
-                </Button>
-              )}
-            </div>
+            {canReopen && (
+              <Button
+                variant="secondary"
+                disabled={reopenMutation.isPending}
+                onClick={() => reopenMutation.mutate(detail.id)}
+              >
+                Reopen for handler
+              </Button>
+            )}
+          </div>
           </div>
 
             <div className="rounded-2xl border border-secondary-100 bg-white p-5 shadow-sm">
@@ -385,7 +337,7 @@ export function TicketDetailDialog({
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="text-sm font-semibold text-secondary-900">{t.message}</div>
                             <div className="text-xs text-secondary-500">
-                              {format(new Date(t.createdAt), "dd MMM yyyy, HH:mm")}
+                              {formatDateTime(t.createdAt)}
                             </div>
                           </div>
                           <div className="mt-1 text-xs text-secondary-500">
@@ -398,13 +350,30 @@ export function TicketDetailDialog({
                               </span>
                             )}
                           </div>
-                          {detail.imageUrls && detail.imageUrls.length > 0 && /ticket raised/i.test(t.message ?? "") && (
-                            <div className="mt-3">
-                              <Button type="button" variant="outline" size="sm" onClick={() => setAttachmentsOpen(true)}>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {detail.imageUrls && detail.imageUrls.length > 0 && /ticket raised/i.test(t.message ?? "") && (
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setAttachmentsState({ open: true, type: "raised" })}
+                              >
                                 View attachments ({detail.imageUrls.length})
                               </Button>
-                            </div>
-                          )}
+                            )}
+                            {detail.completionImageUrls &&
+                              detail.completionImageUrls.length > 0 &&
+                              t.toStatus === ComplaintStatus.Done && (
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => setAttachmentsState({ open: true, type: "completion" })}
+                                >
+                                  View completion attachments ({detail.completionImageUrls.length})
+                                </Button>
+                              )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -413,24 +382,29 @@ export function TicketDetailDialog({
               </div>
             </div>
 
-            <FullScreenImageViewer
-              isOpen={imageViewerOpen}
-              onClose={() => setImageViewerOpen(false)}
-              imageSrc={imageViewerSrc}
-              alt="Ticket photo"
-              disableNoScroll
-            />
-
             <AttachmentListDialog
-              open={attachmentsOpen}
-              onClose={() => setAttachmentsOpen(false)}
-              urls={(detail.imageUrls ?? []) as string[]}
+              open={attachmentsState.open}
+              onClose={() => setAttachmentsState((s) => ({ ...s, open: false }))}
+              urls={
+                (attachmentsState.type === "raised"
+                  ? (detail.imageUrls ?? [])
+                  : (detail.completionImageUrls ?? [])) as string[]
+              }
               urlsToDelete={[]}
               pendingFiles={[]}
               onRemoveUrl={() => {}}
               onRemovePending={() => {}}
               isEditing={false}
-              title="Ticket attachments"
+              title={attachmentsState.type === "raised" ? "Ticket attachments" : "Completion attachments"}
+            />
+
+            <CompletionAttachmentsDialog
+              open={completionDialogOpen}
+              onClose={() => setCompletionDialogOpen(false)}
+              complaintId={detail.id}
+              onCompleted={async () => {
+                invalidate();
+              }}
             />
           </div>
         </div>

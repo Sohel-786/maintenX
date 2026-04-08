@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
+import { formatDate, formatDateTime } from "@/lib/utils";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Ticket,
@@ -170,7 +171,7 @@ export function MxDashboardView() {
             r.companyName ?? "",
             r.status,
             r.assignedHandlerName ?? "—",
-            format(new Date(r.updatedAt), "dd-MMM-yyyy HH:mm"),
+            formatDateTime(r.updatedAt),
           ];
         }
         return [
@@ -179,7 +180,7 @@ export function MxDashboardView() {
           r.departmentName ?? "",
           r.status,
           r.assignedHandlerName ?? "—",
-          format(new Date(r.updatedAt), "dd-MMM-yyyy HH:mm"),
+          formatDateTime(r.updatedAt),
         ];
       });
       downloadCsv(`dashboard-tickets-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, headers, csvRows);
@@ -450,7 +451,7 @@ export function MxDashboardView() {
                         </td>
                         <td className="px-4 py-3">{r.assignedHandlerName ?? "—"}</td>
                         <td className="px-4 py-3 text-xs text-secondary-600">
-                          {format(new Date(r.updatedAt), "dd-MMM-yyyy")}
+                          {formatDate(r.updatedAt)}
                         </td>
                       </tr>
                     ))

@@ -21,6 +21,7 @@ namespace net_backend.DTOs
         public string? RaisedByName { get; set; }
         public List<string>? ImageUrls { get; set; }
         public string? CompletionPhotoUrl { get; set; }
+        public List<string>? CompletionImageUrls { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
     }
@@ -59,7 +60,10 @@ namespace net_backend.DTOs
     {
         public ComplaintStatus Status { get; set; }
         public string? Message { get; set; }
-        /// <summary>Required when handler marks ticket Done (completion evidence URL or data URL).</summary>
+        /// <summary>
+        /// Legacy support. Previously required when handler marks ticket Done.
+        /// New flow uses uploaded completion attachments stored on the ticket.
+        /// </summary>
         public string? CompletionPhotoUrl { get; set; }
     }
 
