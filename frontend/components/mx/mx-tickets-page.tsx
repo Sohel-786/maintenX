@@ -134,6 +134,7 @@ export function MxTicketsPage({
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["complaints"] });
+    queryClient.invalidateQueries({ queryKey: ["complaint"] });
     queryClient.invalidateQueries({ queryKey: ["dashboard-metrics"] });
     queryClient.invalidateQueries({ queryKey: ["mx-sidebar-counts"] });
   };

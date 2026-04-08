@@ -176,6 +176,8 @@ namespace net_backend.Models
         public string Message { get; set; } = string.Empty;
         public ComplaintStatus? FromStatus { get; set; }
         public ComplaintStatus ToStatus { get; set; }
+        [Column(TypeName = "nvarchar(max)")]
+        public string? AttachmentUrlsJson { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         [ForeignKey("ComplaintId")]

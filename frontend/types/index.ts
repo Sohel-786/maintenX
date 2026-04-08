@@ -164,6 +164,7 @@ export interface ComplaintLogEntry {
   fromStatus?: ComplaintStatus | null;
   toStatus: ComplaintStatus;
   createdAt: string;
+  attachmentUrls?: string[] | null;
 }
 
 export interface ComplaintDetail extends ComplaintListItem {

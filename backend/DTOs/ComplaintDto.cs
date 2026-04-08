@@ -41,6 +41,7 @@ namespace net_backend.DTOs
         public ComplaintStatus? FromStatus { get; set; }
         public ComplaintStatus ToStatus { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<string>? AttachmentUrls { get; set; }
     }
 
     public class CreateComplaintRequest

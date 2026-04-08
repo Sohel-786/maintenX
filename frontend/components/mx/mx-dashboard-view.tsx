@@ -103,7 +103,7 @@ export function MxDashboardView() {
     search: debouncedSearch.trim() || undefined,
     categoryId: categoryId === "" ? undefined : categoryId,
     statusGroup: statusGroup ?? undefined,
-    status: !statusGroup && statusExtra ? statusExtra : undefined,
+    status: statusExtra || undefined,
     page,
     pageSize,
   };
@@ -145,10 +145,15 @@ export function MxDashboardView() {
   const hasAdvancedFilters =
     searchInput.trim() !== "" || categoryId !== "" || statusExtra !== "";
 
-  const clearCardFilter = () => setStatusGroup(null);
+  const clearAdvancedFilters = () => {
+    setSearchInput("");
+    setCategoryId("");
+    setStatusExtra("");
+    setPage(1);
+  };
 
   const onExport = useCallback(async () => {
-    if (!selected) return;
+    if (!selected || exporting) return;
     setExporting(true);
     try {
       const res = await api.get("/complaints", {
@@ -184,10 +189,12 @@ export function MxDashboardView() {
         ];
       });
       downloadCsv(`dashboard-tickets-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, headers, csvRows);
+    } catch (err) {
+      console.error("Export failed", err);
     } finally {
       setExporting(false);
     }
-  }, [listParams, selected, showCompany]);
+  }, [listParams, selected, showCompany, exporting]);
 
   const colCount = (showCompany ? 1 : 0) + 7;
 
@@ -307,22 +314,16 @@ export function MxDashboardView() {
                 <p className="text-xs text-secondary-500">{kpiContext}</p>
               </div>
               <div className="flex flex-wrap gap-2">
-                {hasCardFilter && (
-                  <Button type="button" variant="outline" size="sm" className="gap-1" onClick={clearCardFilter}>
-                    <X className="h-3.5 w-3.5" />
-                    Clear filter
-                  </Button>
-                )}
                 <Button
                   type="button"
-                  variant="outline"
                   size="sm"
-                  className="gap-1"
+                  className="gap-2 bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700 disabled:opacity-70"
                   disabled={exporting || rows.length === 0}
+                  loading={exporting}
                   onClick={() => void onExport()}
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  {exporting ? "Exporting…" : "Export CSV"}
+                  {!exporting && <Download className="h-4 w-4" />}
+                  {exporting ? "Exporting Excel…" : "Export Excel"}
                 </Button>
               </div>
             </div>
@@ -354,45 +355,55 @@ export function MxDashboardView() {
                   ))}
                 </select>
               </div>
-              <div className="w-full flex-col sm:w-44">
-                <label className={filterLabelClass}>Status</label>
-                <select
-                  className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
-                  value={statusExtra}
-                  onChange={(e) => {
-                    const v = (e.target.value || "") as ComplaintStatus | "";
-                    setStatusExtra(v);
-                    if (v) setStatusGroup(null);
-                  }}
-                >
-                  <option value="">All (use cards for groups)</option>
-                  {Object.values(ComplaintStatus).map((st) => (
-                    <option key={st} value={st}>
-                      {st}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {statusGroup !== "open" && (
+                <div className="w-full flex-col sm:w-44">
+                  <label className={filterLabelClass}>Status</label>
+                  <select
+                    className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+                    value={statusExtra}
+                    onChange={(e) => {
+                      const v = (e.target.value || "") as ComplaintStatus | "";
+                      setStatusExtra(v);
+                    }}
+                  >
+                    <option value="">{statusGroup === null ? "All statuses" : `All ${statusGroup} statuses`}</option>
+                    {Object.values(ComplaintStatus)
+                      .filter((st) => {
+                        if (statusGroup === "inprogress") {
+                          return [ComplaintStatus.Assigned, ComplaintStatus.Accepted, ComplaintStatus.InProgress].includes(st);
+                        }
+                        if (statusGroup === "completed") {
+                          return [ComplaintStatus.Done, ComplaintStatus.Closed].includes(st);
+                        }
+                        return true;
+                      })
+                      .map((st) => (
+                        <option key={st} value={st}>
+                          {st}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              )}
               <div className="w-20 max-w-[5.5rem] shrink-0">
                 <label className={filterLabelClass}>Rows</label>
                 <PageSizeSelect value={pageSize} onChange={(v) => { setPageSize(v); setPage(1); }} />
               </div>
-              {(hasAdvancedFilters || hasCardFilter) && (
+              {hasAdvancedFilters && (
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
-                  className="h-10"
+                  className="h-10 border-secondary-200 text-secondary-600 hover:bg-secondary-50"
                   onClick={() => {
                     setSearchInput("");
                     setCategoryId("");
                     setStatusExtra("");
-                    setStatusGroup(null);
                     setPage(1);
                   }}
                 >
                   <X className="mr-1.5 h-3.5 w-3.5" />
-                  Clear all
+                  Clear filters
                 </Button>
               )}
             </div>

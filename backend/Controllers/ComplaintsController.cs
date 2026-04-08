@@ -318,7 +318,7 @@ namespace net_backend.Controllers
                     q = q.Where(c =>
                         c.Status == ComplaintStatus.Done || c.Status == ComplaintStatus.Closed);
             }
-            else if (status.HasValue)
+            if (status.HasValue)
                 q = q.Where(c => c.Status == status.Value);
             if (categoryId.HasValue && categoryId.Value > 0)
                 q = q.Where(c => c.CategoryId == categoryId.Value);
@@ -384,6 +384,7 @@ namespace net_backend.Controllers
                 RaisedByName = row.RaisedByName,
                 ImageUrls = row.ImageUrls,
                 CompletionPhotoUrl = row.CompletionPhotoUrl,
+                CompletionImageUrls = row.CompletionImageUrls,
                 CreatedAt = row.CreatedAt,
                 UpdatedAt = row.UpdatedAt,
                 Timeline = logs.Select(l => new ComplaintLogDto
@@ -394,7 +395,8 @@ namespace net_backend.Controllers
                     Message = l.Message,
                     FromStatus = l.FromStatus,
                     ToStatus = l.ToStatus,
-                    CreatedAt = l.CreatedAt
+                    CreatedAt = l.CreatedAt,
+                    AttachmentUrls = ParseUrls(l.AttachmentUrlsJson)
                 }).ToList()
             };
 
@@ -479,8 +481,20 @@ namespace net_backend.Controllers
             if (handler == null || !handlerOk || handler.Role != Role.HANDLER)
                 return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Invalid handler for this location." });
 
+            if (c.AssignedHandlerUserId == request.HandlerUserId)
+                return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = $"Ticket is already assigned to {handler.FirstName} {handler.LastName}." });
+
             var from = c.Status;
             var prevHandlerId = c.AssignedHandlerUserId;
+            
+            // If the ticket was in Done status, moving away from it means we start a fresh completion phase.
+            // Historical record for the previous 'Done' status is already safe in the timeline snapshots.
+            if (from == ComplaintStatus.Done)
+            {
+                c.CompletionPhotoUrl = null;
+                c.CompletionImageUrlsJson = null;
+            }
+
             c.AssignedHandlerUserId = request.HandlerUserId;
             c.Status = ComplaintStatus.Assigned;
             c.UpdatedAt = DateTime.Now;
@@ -519,9 +533,12 @@ namespace net_backend.Controllers
 
             var from = c.Status;
             c.Status = ComplaintStatus.Assigned;
+            c.UpdatedAt = DateTime.Now;
+
+            // Clear current completion data so the next 'Mark Done' phase starts fresh.
+            // Historical record is preserved in the timeline log thanks to snapshotting.
             c.CompletionPhotoUrl = null;
             c.CompletionImageUrlsJson = null;
-            c.UpdatedAt = DateTime.Now;
 
             var handler = await _context.Users.FindAsync(c.AssignedHandlerUserId);
             var hn = handler != null ? $"{handler.FirstName} {handler.LastName}".Trim() : "handler";
@@ -561,9 +578,17 @@ namespace net_backend.Controllers
                 if (!allowedTransition)
                     return BadRequest(new ApiResponse<ComplaintDetailDto> { Success = false, Message = "Invalid status transition." });
 
+                // Cleanup active completion data when moving away from 'Done'
+                if (from == ComplaintStatus.Done && to != ComplaintStatus.Done)
+                {
+                    c.CompletionPhotoUrl = null;
+                    c.CompletionImageUrlsJson = null;
+                }
+
                 c.Status = to;
                 c.UpdatedAt = DateTime.Now;
-                _context.ComplaintLogs.Add(new ComplaintLog
+
+                var log = new ComplaintLog
                 {
                     ComplaintId = c.Id,
                     UserId = CurrentUserId,
@@ -571,7 +596,14 @@ namespace net_backend.Controllers
                     FromStatus = from,
                     ToStatus = to,
                     CreatedAt = DateTime.Now
-                });
+                };
+                if (to == ComplaintStatus.Done)
+                {
+                    // Snapshot the current completion images onto the log for permanent history.
+                    log.AttachmentUrlsJson = c.CompletionImageUrlsJson;
+                }
+
+                _context.ComplaintLogs.Add(log);
                 await _context.SaveChangesAsync();
                 return await GetById(id);
             }
@@ -604,8 +636,27 @@ namespace net_backend.Controllers
                     }
                 }
 
+                // Cleanup active completion data when moving away from 'Done'
+                if (from == ComplaintStatus.Done && to != ComplaintStatus.Done)
+                {
+                    c.CompletionPhotoUrl = null;
+                    c.CompletionImageUrlsJson = null;
+                }
+
                 c.Status = to;
                 c.UpdatedAt = DateTime.Now;
+
+                // Snapshot attachments onto the timeline log so each completion stage
+                // remains visible even if the ticket is reopened later.
+                string? attachmentUrlsJson = null;
+                if (to == ComplaintStatus.Done && from == ComplaintStatus.InProgress)
+                {
+                    var completionUrls = ParseUrls(c.CompletionImageUrlsJson) ?? new List<string>();
+                    if (!string.IsNullOrWhiteSpace(c.CompletionPhotoUrl) && !completionUrls.Contains(c.CompletionPhotoUrl))
+                        completionUrls.Add(c.CompletionPhotoUrl);
+                    attachmentUrlsJson = SerializeUrls(completionUrls);
+                }
+
                 _context.ComplaintLogs.Add(new ComplaintLog
                 {
                     ComplaintId = c.Id,
@@ -613,6 +664,7 @@ namespace net_backend.Controllers
                     Message = string.IsNullOrWhiteSpace(request.Message) ? $"Status → {to}" : request.Message!.Trim(),
                     FromStatus = from,
                     ToStatus = to,
+                    AttachmentUrlsJson = attachmentUrlsJson,
                     CreatedAt = DateTime.Now
                 });
                 await _context.SaveChangesAsync();
