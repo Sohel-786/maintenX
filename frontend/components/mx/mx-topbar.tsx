@@ -177,20 +177,16 @@ export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?
           </div>
         </div>
 
-        {/* Header Logout Button (Only if Horizontal mode is active) */}
-        {isHorizontal && (
-          <>
-            <div className="h-8 w-px bg-white/10 hidden sm:block" />
-            <button
-              type="button"
-              onClick={() => logoutMutation.mutate()}
-              className="flex h-9 items-center gap-2 rounded-lg border border-white/15 px-3 text-xs font-bold text-white/80 transition-all hover:border-red-400/50 hover:text-red-300 hover:bg-red-900/10"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden md:inline">Sign out</span>
-            </button>
-          </>
-        )}
+        {/* Header Logout Button (Always visible) */}
+        <div className="h-8 w-px bg-white/10 hidden sm:block" />
+        <button
+          type="button"
+          onClick={() => logoutMutation.mutate()}
+          className="flex h-9 items-center gap-2 rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 text-xs font-bold text-rose-400 transition-all hover:bg-rose-500/20 hover:text-rose-300 hover:border-rose-400/50"
+        >
+          <LogOut className="h-4 w-4" />
+          <span className="hidden md:inline">Sign out</span>
+        </button>
       </div>
     </header>
   );

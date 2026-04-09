@@ -90,16 +90,18 @@ export function AttachmentListDialog({
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                                            onClick={() => onRemoveUrl(url)}
-                                            title="Remove"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        {isEditing && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                                onClick={() => onRemoveUrl(url)}
+                                                title="Remove"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             ))}
@@ -126,16 +128,18 @@ export function AttachmentListDialog({
                                         >
                                             <Eye className="w-4 h-4" />
                                         </Button>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
-                                            onClick={() => onRemovePending(idx)}
-                                            title="Remove"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </Button>
+                                        {isEditing && (
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                className="h-8 w-8 p-0 text-rose-600 hover:text-rose-700 hover:bg-rose-50"
+                                                onClick={() => onRemovePending(idx)}
+                                                title="Remove"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             ))}

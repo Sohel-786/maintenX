@@ -245,25 +245,6 @@ export function MxSidebar({
           )}
         </div>
 
-        {/* Sidebar Logout Button */}
-        {isVertical && (
-          <div className="mt-8 border-t border-white/[0.04] pt-4 pb-6 px-2">
-            <button
-              onClick={() => logoutMutation.mutate()}
-              className={cn(
-                "mx-nav-item flex items-center justify-center rounded-lg border border-transparent text-[14px] font-semibold transition-all duration-300 overflow-hidden group w-full px-3 py-3 !text-rose-300 hover:!bg-rose-500/20 hover:!text-rose-100"
-              )}
-            >
-              <LogOut className={cn("h-5 w-5 shrink-0", !showFull && "mx-auto")} />
-              <div className={cn(
-                "ml-2 transition-all duration-300",
-                showFull ? "opacity-100 w-auto" : "opacity-0 w-0 pointer-events-none"
-              )}>
-                <span className="whitespace-nowrap font-bold">Sign out</span>
-              </div>
-            </button>
-          </div>
-        )}
       </div>
     </aside>
   );

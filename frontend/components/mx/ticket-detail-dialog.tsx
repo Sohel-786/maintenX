@@ -18,19 +18,47 @@ import { SearchableSelect } from "@/components/ui/searchable-select";
 function statusMeta(status: ComplaintStatus) {
   switch (status) {
     case ComplaintStatus.Open:
-      return { label: "Open", pill: "bg-amber-950/60 text-amber-50 border-amber-200/20", dot: "bg-amber-300" };
+      return { 
+        label: "Open", 
+        pill: "bg-amber-600 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
     case ComplaintStatus.Assigned:
-      return { label: "Assigned", pill: "bg-sky-950/60 text-sky-50 border-sky-200/20", dot: "bg-sky-300" };
+      return { 
+        label: "Assigned", 
+        pill: "bg-sky-600 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
     case ComplaintStatus.Accepted:
-      return { label: "Accepted", pill: "bg-indigo-950/60 text-indigo-50 border-indigo-200/20", dot: "bg-indigo-300" };
+      return { 
+        label: "Accepted", 
+        pill: "bg-indigo-600 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
     case ComplaintStatus.InProgress:
-      return { label: "In progress", pill: "bg-orange-950/60 text-orange-50 border-orange-200/20", dot: "bg-orange-300" };
+      return { 
+        label: "In progress", 
+        pill: "bg-blue-600 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
     case ComplaintStatus.Done:
-      return { label: "Done", pill: "bg-emerald-950/60 text-emerald-50 border-emerald-200/20", dot: "bg-emerald-300" };
+      return { 
+        label: "Done", 
+        pill: "bg-emerald-600 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
     case ComplaintStatus.Closed:
-      return { label: "Closed", pill: "bg-secondary-950/70 text-secondary-50 border-secondary-200/20", dot: "bg-secondary-200" };
+      return { 
+        label: "Closed", 
+        pill: "bg-slate-700 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
     default:
-      return { label: String(status), pill: "bg-secondary-950/70 text-secondary-50 border-secondary-200/20", dot: "bg-secondary-200" };
+      return { 
+        label: String(status), 
+        pill: "bg-secondary-800 text-white border-white/20 shadow-md", 
+        dot: "bg-white" 
+      };
   }
 }
 
@@ -322,19 +350,27 @@ export function TicketDetailDialog({
               <div className="rounded-xl border border-secondary-100 bg-white p-3.5 shadow-sm">
                 <div className="flex flex-wrap items-center gap-2">
                   {showAccept && (
-                    <Button size="sm" variant="secondary" className="px-5 font-bold" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Accepted })}>
+                    <Button 
+                      size="sm" 
+                      className="px-5 font-bold border border-blue-200 dark:border-blue-500/50 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-white hover:bg-blue-100 dark:hover:bg-blue-600/40 transition-all shadow-sm" 
+                      onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Accepted })}
+                    >
                       Accept
                     </Button>
                   )}
                   {showStartWork && (
-                    <Button size="sm" variant="secondary" className="px-5 font-bold" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.InProgress })}>
+                    <Button 
+                      size="sm" 
+                      className="px-5 font-bold border border-amber-200 dark:border-amber-500/50 bg-amber-50 dark:bg-amber-600/20 text-amber-700 dark:text-white hover:bg-amber-100 dark:hover:bg-amber-600/40 transition-all shadow-sm" 
+                      onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.InProgress })}
+                    >
                       Start work
                     </Button>
                   )}
                   {showMarkDone && (
                     <Button
                       size="sm"
-                      className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 font-bold"
+                      className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 font-bold border border-emerald-500 shadow-lg shadow-emerald-500/20"
                       disabled={statusMutation.isPending}
                       onClick={() => setCompletionDialogOpen(true)}
                     >
@@ -342,15 +378,19 @@ export function TicketDetailDialog({
                     </Button>
                   )}
                   {showClose && (
-                    <Button size="sm" variant="outline" className="px-6 font-bold" disabled={statusMutation.isPending} onClick={() => openConfirm("close")}>
+                    <Button 
+                      size="sm" 
+                      className="px-6 font-bold border border-rose-200 dark:border-rose-500/50 bg-rose-50 dark:bg-rose-600/20 text-rose-700 dark:text-white hover:bg-rose-100 dark:hover:bg-rose-600/40 transition-all shadow-sm" 
+                      disabled={statusMutation.isPending} 
+                      onClick={() => openConfirm("close")}
+                    >
                       Close ticket
                     </Button>
                   )}
                   {showReopen && (
                     <Button
                       size="sm"
-                      variant="secondary"
-                      className="px-6 font-bold"
+                      className="px-6 font-bold border border-indigo-200 dark:border-indigo-500/50 bg-indigo-50 dark:bg-indigo-600/20 text-indigo-700 dark:text-white hover:bg-indigo-100 dark:hover:bg-indigo-600/40 transition-all shadow-sm"
                       disabled={reopenMutation.isPending}
                       onClick={() => openConfirm("reopen")}
                     >
@@ -380,13 +420,13 @@ export function TicketDetailDialog({
                   }
                 }}
               >
-                <p className="text-sm text-secondary-600 leading-relaxed">{confirmDescription}</p>
+                <p className="text-sm text-secondary-600 dark:text-secondary-400 leading-relaxed">{confirmDescription}</p>
                 <div className="flex gap-3">
                   <Button
                     ref={confirmCancelRef}
                     type="button"
                     variant="outline"
-                    className="flex-1 font-semibold"
+                    className="flex-1 font-semibold dark:border-border dark:text-white dark:hover:bg-white/10"
                     onClick={closeConfirm}
                   >
                     Cancel
@@ -395,10 +435,10 @@ export function TicketDetailDialog({
                     ref={confirmOkRef}
                     type="button"
                     className={[
-                      "flex-1 font-semibold text-white",
+                      "flex-1 font-semibold text-white shadow-lg",
                       confirmAction?.type === "close"
-                        ? "bg-secondary-900 hover:bg-secondary-950"
-                        : "bg-indigo-600 hover:bg-indigo-700",
+                        ? "bg-rose-600 hover:bg-rose-700 shadow-rose-500/20 text-white"
+                        : "bg-indigo-600 hover:bg-indigo-700 shadow-indigo-500/20 text-white",
                     ].join(" ")}
                     disabled={statusMutation.isPending || reopenMutation.isPending}
                     onClick={() => {
@@ -415,10 +455,10 @@ export function TicketDetailDialog({
               </div>
             </Dialog>
 
-            <div className="rounded-xl border border-secondary-100 bg-white p-4 shadow-sm">
-              <div className="mb-3.5 text-[10px] font-bold uppercase tracking-widest text-secondary-500/80">Activity timeline</div>
+            <div className="rounded-xl border border-secondary-100 dark:border-border bg-white dark:bg-card p-4 shadow-sm">
+              <div className="mb-3.5 text-[10px] font-bold uppercase tracking-widest text-secondary-500/80 dark:text-secondary-400/80">Activity timeline</div>
               <div className="relative pl-6">
-                <div className="absolute left-2 top-1 bottom-1 w-px bg-secondary-100" />
+                <div className="absolute left-2 top-1 bottom-1 w-px bg-secondary-100 dark:bg-border" />
                 <div className="space-y-3">
                   {(detail.timeline ?? []).map((t) => {
                     const isStatusChange = t.fromStatus != null;
@@ -429,29 +469,29 @@ export function TicketDetailDialog({
                       : Activity;
                     const iconColor =
                       t.toStatus === ComplaintStatus.Closed
-                        ? "text-emerald-600 bg-emerald-50 border-emerald-100"
+                        ? "text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 border-emerald-100 dark:border-emerald-900/50"
                         : isStatusChange
-                          ? "text-sky-600 bg-sky-50 border-sky-100"
-                          : "text-secondary-600 bg-secondary-50 border-secondary-100";
+                          ? "text-sky-600 bg-sky-50 dark:bg-sky-950/30 border-sky-100 dark:border-sky-900/50"
+                          : "text-secondary-600 bg-secondary-50 dark:bg-secondary-900 border-secondary-100 dark:border-secondary-800";
                     return (
                       <div key={t.id} className="relative">
                         <div className={`absolute -left-6 top-0 flex h-7 w-7 items-center justify-center rounded-full border ${iconColor} z-10`}>
                           <Icon className="h-3.5 w-3.5" />
                         </div>
-                        <div className="rounded-xl border border-secondary-50 bg-secondary-50/30 px-3.5 py-2.5 transition-colors hover:bg-secondary-50/50">
+                        <div className="rounded-xl border border-secondary-50 dark:border-border bg-secondary-50/30 dark:bg-white/[0.02] px-3.5 py-2.5 transition-colors hover:bg-secondary-50/50 dark:hover:bg-white/[0.04]">
                           <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="text-[13px] font-bold text-secondary-900">{t.message}</div>
-                            <div className="text-[10px] font-bold text-secondary-400 uppercase tracking-tighter">
+                            <div className="text-[13px] font-bold text-secondary-900 dark:text-white">{t.message}</div>
+                            <div className="text-[10px] font-bold text-secondary-400 dark:text-secondary-500 uppercase tracking-tighter">
                               {formatDateTime(t.createdAt)}
                             </div>
                           </div>
-                          <div className="mt-0.5 text-[11px] font-medium text-secondary-500">
+                          <div className="mt-0.5 text-[11px] font-medium text-secondary-500 dark:text-secondary-400">
                             {t.userName ?? "User"}
                             {t.fromStatus != null && (
                               <span className="ml-2 inline-flex items-center gap-1 opacity-80">
-                                <span className="font-bold text-secondary-600">{t.fromStatus}</span>
-                                <span className="text-secondary-300">→</span>
-                                <span className="font-bold text-secondary-600">{t.toStatus}</span>
+                                <span className="font-bold text-secondary-600 dark:text-white">{t.fromStatus}</span>
+                                <span className="text-secondary-300 dark:text-secondary-600">→</span>
+                                <span className="font-bold text-secondary-600 dark:text-white">{t.toStatus}</span>
                               </span>
                             )}
                           </div>
@@ -471,7 +511,7 @@ export function TicketDetailDialog({
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      className="h-7 text-[10px] font-bold uppercase tracking-wider px-3 bg-white hover:bg-secondary-50"
+                                      className="h-7 text-[10px] font-bold uppercase tracking-wider px-3 bg-white dark:bg-secondary-800 border-secondary-200 dark:border-secondary-700 hover:bg-secondary-50 dark:hover:bg-secondary-700 text-secondary-700 dark:text-white shadow-sm"
                                       onClick={() => setAttachmentsState({ open: true, type: "raised" })}
                                     >
                                       View attachments ({detail.imageUrls?.length})
@@ -482,7 +522,7 @@ export function TicketDetailDialog({
                                       type="button"
                                       variant="outline"
                                       size="sm"
-                                      className="h-7 text-[10px] font-bold uppercase tracking-wider px-3 border-emerald-200 text-emerald-700 bg-emerald-50/50 hover:bg-emerald-100/50"
+                                      className="h-7 text-[10px] font-bold uppercase tracking-wider px-3 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-white bg-emerald-50/50 dark:bg-emerald-600/20 hover:bg-emerald-100/50 dark:hover:bg-emerald-600/40 shadow-sm"
                                       onClick={() => {
                                         // Prefer the snapshot stored on this timeline entry (supports multiple completion stages).
                                         // Fallback for older data: use current ticket-level completionImageUrls.

@@ -86,10 +86,11 @@ export function Header({ user, isNavExpanded, onNavExpandChange }: HeaderProps) 
 
   return (
     <header
-      className={`bg-white dark:bg-card border-b border-secondary-200 dark:border-border flex items-center justify-between px-4 md:px-6 sticky top-0 z-40 shadow-sm transition-colors duration-300 ${isHorizontal
+      className={`border-b border-white/10 flex items-center justify-between px-4 md:px-6 sticky top-0 z-40 shadow-lg transition-all duration-300 ${isHorizontal
         ? 'h-16 py-2'
         : hasLogo ? 'min-h-[5rem] py-3' : 'h-16 py-3'
         }`}
+      style={{ background: "var(--mx-navy-900)" }}
     >
       <div className="flex items-center min-w-0 shrink-0 gap-6">
         {hasLogo ? (
@@ -116,53 +117,53 @@ export function Header({ user, isNavExpanded, onNavExpandChange }: HeaderProps) 
           </div>
         )}
 
-        <div className="h-10 w-px bg-secondary-200 dark:bg-border hidden lg:block" />
-
+        <div className="h-10 w-px bg-white/10 hidden lg:block" />
+ 
         {currentPair && (
           hasMultipleLocations ? (
             <button
               type="button"
               onClick={openSwitchLocation}
-              className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-secondary-200 dark:border-border bg-secondary-50/30 dark:bg-card hover:bg-secondary-50 dark:hover:bg-muted hover:border-primary-300 dark:hover:border-primary-500/30 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary-500/20 shadow-sm min-w-0"
+              className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all duration-200 cursor-pointer focus:outline-none focus:ring-1 focus:ring-white/20 shadow-sm min-w-0"
               title="Switch company or location"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center justify-center w-7 h-7 rounded bg-white dark:bg-secondary-800 border border-secondary-100 dark:border-secondary-700 shrink-0">
-                  <Building2 className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/5 border border-white/10 shrink-0">
+                  <Building2 className="h-3.5 w-3.5 text-white/80" />
                 </div>
-                <span className="text-xs font-bold text-secondary-900 dark:text-white truncate max-w-[140px] hidden sm:block">
+                <span className="text-xs font-bold text-white truncate max-w-[140px] hidden sm:block">
                   {currentPair.companyName}
                 </span>
               </div>
-              <div className="w-px h-5 bg-secondary-200 dark:bg-secondary-700" />
+              <div className="w-px h-5 bg-white/10" />
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center justify-center w-7 h-7 rounded bg-white dark:bg-secondary-800 border border-secondary-100 dark:border-secondary-700 shrink-0">
-                  <MapPin className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/5 border border-white/10 shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-white/80" />
                 </div>
-                <span className="text-xs font-bold text-secondary-900 dark:text-white truncate max-w-[120px] hidden sm:block">
+                <span className="text-xs font-bold text-white truncate max-w-[120px] hidden sm:block">
                   {currentPair.locationName}
                 </span>
               </div>
-              <ChevronDown className="h-3.5 w-3.5 text-secondary-400 dark:text-secondary-500" />
+              <ChevronDown className="h-3.5 w-3.5 text-white/50" />
             </button>
           ) : (
             <div
-              className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-secondary-200 dark:border-border bg-secondary-50/30 dark:bg-card shadow-sm min-w-0"
+              className="flex items-center gap-3 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 shadow-sm min-w-0"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center justify-center w-7 h-7 rounded bg-white dark:bg-secondary-800 border border-secondary-100 dark:border-secondary-700 shrink-0">
-                  <Building2 className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/5 border border-white/10 shrink-0">
+                  <Building2 className="h-3.5 w-3.5 text-white/80" />
                 </div>
-                <span className="text-xs font-bold text-secondary-900 dark:text-white truncate max-w-[140px] hidden sm:block">
+                <span className="text-xs font-bold text-white truncate max-w-[140px] hidden sm:block">
                   {currentPair.companyName}
                 </span>
               </div>
-              <div className="w-px h-5 bg-secondary-200 dark:bg-secondary-700" />
+              <div className="w-px h-5 bg-white/10" />
               <div className="flex items-center gap-2 min-w-0">
-                <div className="flex items-center justify-center w-7 h-7 rounded bg-white dark:bg-secondary-800 border border-secondary-100 dark:border-secondary-700 shrink-0">
-                  <MapPin className="h-3.5 w-3.5 text-primary-600 dark:text-primary-400" />
+                <div className="flex items-center justify-center w-7 h-7 rounded bg-white/5 border border-white/10 shrink-0">
+                  <MapPin className="h-3.5 w-3.5 text-white/80" />
                 </div>
-                <span className="text-xs font-bold text-secondary-900 dark:text-white truncate max-w-[120px] hidden sm:block">
+                <span className="text-xs font-bold text-white truncate max-w-[120px] hidden sm:block">
                   {currentPair.locationName}
                 </span>
               </div>
@@ -170,13 +171,13 @@ export function Header({ user, isNavExpanded, onNavExpandChange }: HeaderProps) 
           )
         )}
       </div>
-
+ 
       <div className="flex items-center gap-4 min-w-0 flex-1 justify-end">
         <ThemeToggle />
         {isHorizontal && (
           <button
             onClick={() => onNavExpandChange(!isNavExpanded)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-secondary-900 dark:text-primary-300 bg-secondary-100/50 dark:bg-primary-950/20 hover:bg-secondary-200 dark:hover:bg-primary-900/30 hover:text-primary-700 dark:hover:text-primary-300 transition-all font-bold border border-secondary-300 dark:border-primary-500/30 shadow-sm"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-white bg-white/10 hover:bg-white/20 transition-all font-bold border border-white/10 shadow-sm"
           >
             {isNavExpanded ? (
               <>
@@ -191,32 +192,30 @@ export function Header({ user, isNavExpanded, onNavExpandChange }: HeaderProps) 
             )}
           </button>
         )}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 pl-2 border-l border-white/10">
           <Avatar user={user} size={isHorizontal ? "sm" : "md"} showName={false} />
           <div className="flex flex-col justify-center min-w-0">
-            <span className={`font-semibold text-secondary-900 dark:text-white truncate ${isHorizontal ? 'text-xs' : 'text-sm'
+            <span className={`font-semibold text-white truncate ${isHorizontal ? 'text-xs' : 'text-sm'
               }`}>
               {user.firstName} {user.lastName}
             </span>
-            <span className={`text-secondary-500 dark:text-secondary-400 truncate ${isHorizontal ? 'text-[10px]' : 'text-xs'
+            <span className={`text-white/60 truncate ${isHorizontal ? 'text-[10px]' : 'text-xs'
               }`}>
               {user.username}
             </span>
           </div>
         </div>
-        {isHorizontal && (
-          <div className="border-l border-secondary-200 dark:border-border pl-4 ml-1">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="text-secondary-900 dark:text-rose-300 bg-secondary-100/50 dark:bg-rose-950/20 border-secondary-300 dark:border-rose-900/30 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 flex items-center gap-2 px-3 h-9 rounded-lg transition-all duration-200 font-bold"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="hidden md:inline">Logout</span>
-            </Button>
-          </div>
-        )}
+        <div className="border-l border-white/10 pl-4 ml-1">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="text-rose-400 bg-rose-500/10 border-rose-500/30 hover:text-rose-300 hover:bg-rose-500/20 hover:border-rose-400/50 flex items-center gap-2 px-3 h-9 rounded-lg transition-all duration-200 font-bold"
+          >
+            <LogOut className="h-4 w-4" />
+            <span className="hidden md:inline">Sign out</span>
+          </Button>
+        </div>
       </div>
     </header>
   );

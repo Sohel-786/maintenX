@@ -231,7 +231,7 @@ export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
 
   const renderSectionLabel = (label: string) => (
     <div className="flex flex-col items-center w-full mb-1.5">
-       <h3 className="text-[9px] font-black text-secondary-300 dark:text-blue-400/40 uppercase tracking-[0.3em]">{label}</h3>
+       <h3 className="text-[9px] font-black text-black dark:text-blue-400/40 uppercase tracking-[0.3em]">{label}</h3>
     </div>
   );
 
