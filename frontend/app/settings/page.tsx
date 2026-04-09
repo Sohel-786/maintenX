@@ -226,7 +226,7 @@ export default function SettingsPage() {
       username: "",
       password: "",
       name: "",
-      role: Role.EMPLOYEE,
+      role: Role.USER,
       isActive: true,
     },
   });
@@ -329,7 +329,7 @@ export default function SettingsPage() {
         username: "",
         password: "",
         name: "",
-        role: Role.EMPLOYEE,
+        role: Role.USER,
         isActive: true,
         profileDepartment: "",
         companyId: undefined,
@@ -471,7 +471,7 @@ export default function SettingsPage() {
         username: "",
         password: "",
         name: "",
-        role: Role.EMPLOYEE,
+        role: Role.USER,
         isActive: true,
         profileDepartment: "",
         companyId: undefined,
@@ -1131,7 +1131,7 @@ export default function SettingsPage() {
                                       ? "Coordinator"
                                       : u.role === Role.HANDLER
                                         ? "Handler"
-                                        : "Employee"}
+                                        : "User"}
                                 </span>
                               </td>
                               <td className="py-3 px-4">
@@ -1298,7 +1298,7 @@ export default function SettingsPage() {
                   {...register("role")}
                   className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
                 >
-                  <option value={Role.EMPLOYEE}>Employee</option>
+                  <option value={Role.USER}>User</option>
                   <option value={Role.COORDINATOR}>Coordinator</option>
                   <option value={Role.HANDLER}>Handler</option>
                   <option value={Role.ADMIN}>Admin</option>
@@ -1408,3 +1408,4 @@ export default function SettingsPage() {
     </div>
   );
 }
+

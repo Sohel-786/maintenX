@@ -7,6 +7,7 @@ using net_backend.DTOs;
 using net_backend.Models;
 using net_backend.Services;
 using net_backend.Utils;
+using ClosedXML.Excel;
 using static net_backend.Services.PaginationHelper;
 
 namespace net_backend.Controllers
@@ -298,7 +299,7 @@ namespace net_backend.Controllers
             }
             else
             {
-                if (me.Role == Role.EMPLOYEE && perm?.ViewAllComplaints != true)
+                if (me.Role == Role.USER && perm?.ViewAllComplaints != true)
                     q = q.Where(c => c.RaisedByUserId == me.Id);
                 else if (me.Role == Role.HANDLER)
                     q = q.Where(c => c.AssignedHandlerUserId == me.Id);
@@ -672,6 +673,124 @@ namespace net_backend.Controllers
             }
 
             return Forbidden();
+        }
+        [HttpGet("export")]
+        public async Task<IActionResult> Export(
+            [FromQuery] string? search,
+            [FromQuery] ComplaintStatus? status,
+            [FromQuery] string? statusGroup,
+            [FromQuery] string? assignmentBucket,
+            [FromQuery] int? categoryId)
+        {
+            if (!await HasPermission("ViewComplaints")) return Forbid();
+            var locationId = await GetCurrentLocationIdAsync();
+            var me = await _context.Users.FirstOrDefaultAsync(u => u.Id == CurrentUserId);
+            if (me == null) return Unauthorized();
+            var perm = await _context.UserPermissions.FirstOrDefaultAsync(p => p.UserId == CurrentUserId);
+
+            var loc = await _context.Locations.Include(l => l.Company).FirstOrDefaultAsync(l => l.Id == locationId);
+            var companyName = loc?.Company?.Name ?? "N/A";
+            var locationName = loc?.Name ?? "N/A";
+
+            var q = _context.Complaints
+                .AsNoTracking()
+                .Include(c => c.Location)!.ThenInclude(l => l!.Company)
+                .Include(c => c.Category)
+                .Include(c => c.Department)
+                .Include(c => c.RaisedBy)
+                .Include(c => c.AssignedHandler)
+                .Where(c => c.LocationId == locationId);
+
+            var bucketNorm = assignmentBucket?.Trim().ToLowerInvariant();
+            var isAssignmentDesk = bucketNorm is "unassigned" or "activereassign";
+
+            if (isAssignmentDesk)
+            {
+                if (!await HasPermission("AssignComplaints")) return Forbid();
+                if (bucketNorm == "unassigned")
+                    q = q.Where(c => c.Status == ComplaintStatus.Open && c.AssignedHandlerUserId == null);
+                else
+                    q = q.Where(c =>
+                        c.Status == ComplaintStatus.Assigned ||
+                        c.Status == ComplaintStatus.Accepted ||
+                        c.Status == ComplaintStatus.InProgress);
+            }
+            else
+            {
+                if (me.Role == Role.USER && perm?.ViewAllComplaints != true)
+                    q = q.Where(c => c.RaisedByUserId == me.Id);
+                else if (me.Role == Role.HANDLER)
+                    q = q.Where(c => c.AssignedHandlerUserId == me.Id);
+            }
+
+            var sg = statusGroup?.Trim().ToLowerInvariant();
+            if (sg is "open" or "inprogress" or "completed")
+            {
+                if (sg == "open") q = q.Where(c => c.Status == ComplaintStatus.Open);
+                else if (sg == "inprogress") q = q.Where(c => c.Status == ComplaintStatus.Assigned || c.Status == ComplaintStatus.Accepted || c.Status == ComplaintStatus.InProgress);
+                else q = q.Where(c => c.Status == ComplaintStatus.Done || c.Status == ComplaintStatus.Closed);
+            }
+            if (status.HasValue) q = q.Where(c => c.Status == status.Value);
+            if (categoryId.HasValue && categoryId.Value > 0) q = q.Where(c => c.CategoryId == categoryId.Value);
+
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var s = search.Trim().ToLower();
+                q = q.Where(c => c.ComplaintNo.ToLower().Contains(s) || (c.Description != null && c.Description.ToLower().Contains(s)));
+            }
+
+            var tickets = await q.OrderByDescending(c => c.CreatedAt).ToListAsync();
+
+            using var workbook = new XLWorkbook();
+            var worksheet = workbook.Worksheets.Add("Tickets");
+
+            // Header Metadata
+            worksheet.Cell(1, 1).Value = "MaintenX - Ticket Export Details";
+            worksheet.Cell(1, 1).Style.Font.Bold = true;
+            worksheet.Cell(1, 1).Style.Font.FontSize = 14;
+
+            worksheet.Cell(2, 1).Value = $"Exported On: {DateTime.Now:dd/MM/yyyy HH:mm:ss}";
+            worksheet.Cell(3, 1).Value = $"Company: {companyName} | Location: {locationName}";
+            worksheet.Cell(3, 1).Style.Font.Italic = true;
+
+            // Table Headers (starting at row 5)
+            var headers = new[] { "Ticket No", "Company", "Location", "Category", "Department", "Description", "Status", "Handler", "Raised By", "Created At", "Updated At" };
+            for (int i = 0; i < headers.Length; i++)
+            {
+                var cell = worksheet.Cell(5, i + 1);
+                cell.Value = headers[i];
+                cell.Style.Font.Bold = true;
+                cell.Style.Fill.BackgroundColor = XLColor.FromArgb(0, 51, 102); // Dark Blue
+                cell.Style.Font.FontColor = XLColor.White;
+            }
+
+            // Data Rows
+            int rowIdx = 6;
+            foreach (var t in tickets)
+            {
+                worksheet.Cell(rowIdx, 1).Value = t.ComplaintNo;
+                worksheet.Cell(rowIdx, 2).Value = t.Location?.Company?.Name ?? "—";
+                worksheet.Cell(rowIdx, 3).Value = t.Location?.Name ?? "—";
+                worksheet.Cell(rowIdx, 4).Value = t.Category?.Name ?? "—";
+                worksheet.Cell(rowIdx, 5).Value = t.Department?.Name ?? "—";
+                worksheet.Cell(rowIdx, 6).Value = t.Description ?? "—";
+                worksheet.Cell(rowIdx, 7).Value = t.Status.ToString();
+                worksheet.Cell(rowIdx, 8).Value = t.AssignedHandler != null ? $"{t.AssignedHandler.FirstName} {t.AssignedHandler.LastName}".Trim() : "—";
+                worksheet.Cell(rowIdx, 9).Value = t.RaisedBy != null ? $"{t.RaisedBy.FirstName} {t.RaisedBy.LastName}".Trim() : "—";
+                worksheet.Cell(rowIdx, 10).Value = t.CreatedAt.ToString("dd/MM/yyyy HH:mm");
+                worksheet.Cell(rowIdx, 11).Value = t.UpdatedAt.ToString("dd/MM/yyyy HH:mm");
+                rowIdx++;
+            }
+
+            worksheet.Range(5, 1, rowIdx - 1, headers.Length).SetAutoFilter();
+            worksheet.Columns().AdjustToContents();
+
+            using var stream = new MemoryStream();
+            workbook.SaveAs(stream);
+            var content = stream.ToArray();
+            var fileName = $"Tickets_{DateTime.Now:yyyyMMdd_HHmm}.xlsx";
+
+            return File(content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
         }
     }
 }

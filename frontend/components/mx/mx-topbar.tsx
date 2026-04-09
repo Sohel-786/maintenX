@@ -17,7 +17,7 @@ function roleLabel(role: Role) {
     case Role.HANDLER:
       return "Handler";
     default:
-      return "Employee";
+      return "User";
   }
 }
 
@@ -195,3 +195,4 @@ export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?
     </header>
   );
 }
+

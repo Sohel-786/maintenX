@@ -97,7 +97,7 @@ namespace net_backend.Controllers
                 CompanyId = companyId,
                 LocationId = locationId,
                 Name = name,
-                IsActive = true,
+                IsActive = request.IsActive ?? true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -129,6 +129,19 @@ namespace net_backend.Controllers
             if (await _context.FacilityDepartments.AnyAsync(x => x.CompanyId == companyId && x.Id != id && x.Name.ToLower() == name.ToLower()))
                 return Conflict(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Another department with this name already exists." });
             d.Name = name;
+            if (request.IsActive.HasValue)
+            {
+                if (!request.IsActive.Value && d.IsActive)
+                {
+                    var locIds = await _context.Locations
+                        .Where(l => l.CompanyId == companyId).Select(l => l.Id).ToListAsync();
+                    var hasActive = await _context.Complaints.AnyAsync(c =>
+                        locIds.Contains(c.LocationId) && c.DepartmentId == id && c.Status != ComplaintStatus.Done);
+                    if (hasActive)
+                        return BadRequest(new ApiResponse<FacilityDepartmentDto> { Success = false, Message = "Cannot deactivate: this department is used by active tickets." });
+                }
+                d.IsActive = request.IsActive.Value;
+            }
             d.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
             var loc = await _context.Locations.AsNoTracking().FirstOrDefaultAsync(l => l.Id == locationId);

@@ -13,6 +13,7 @@ import { Save, X, Building2, ImagePlus, Trash2 } from "lucide-react";
 import api from "@/lib/api";
 import { toast } from "react-hot-toast";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const hexColor = z
   .string()
@@ -316,27 +317,17 @@ export function CompanyDialog({ isOpen, onClose, onSubmit, item, isLoading, read
               {errors.themeColor && <p className="text-xs text-destructive">{errors.themeColor.message}</p>}
             </div>
 
-            <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
-              <button
-                type="button"
-                disabled={isReadOnly}
-                onClick={() => setValue("isActive", !isActive, { shouldDirty: true })}
-                className={cn(
-                  "relative h-7 w-12 shrink-0 rounded-full transition-colors",
-                  isActive ? "bg-primary" : "bg-muted-foreground/30",
-                )}
-              >
-                <span
-                  className={cn(
-                    "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
-                    isActive ? "left-[26px]" : "left-0.5",
-                  )}
-                />
-              </button>
-              <div>
-                <p className="text-sm font-semibold">Active</p>
+            <div className="flex items-center justify-between rounded-xl border border-secondary-200 bg-secondary-50/50 p-4 transition-colors hover:bg-secondary-50 dark:border-white/10 dark:bg-white/5">
+              <div className="space-y-0.5">
+                <p className="text-sm font-bold text-secondary-900 dark:text-white">Active</p>
                 <p className="text-xs text-muted-foreground">Inactive companies are hidden from new operational use.</p>
               </div>
+              <Switch
+                id="company-active"
+                checked={isActive}
+                onCheckedChange={(v) => setValue("isActive", v, { shouldDirty: true })}
+                disabled={isReadOnly}
+              />
             </div>
           </div>
         </fieldset>

@@ -3,28 +3,35 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
-import { Building2, MapPin, LayoutDashboard, Settings, ClipboardList, Tags, type LucideIcon } from "lucide-react";
+import { 
+  Building2, 
+  MapPin, 
+  LayoutDashboard, 
+  Settings, 
+  ClipboardList, 
+  Tags, 
+  List, 
+  UserPlus, 
+  CheckCircle, 
+  Wrench, 
+  PlusCircle,
+  Layers,
+  type LucideIcon 
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCurrentUserPermissions } from "@/hooks/use-settings";
+import { useMxCounts } from "@/hooks/use-mx-counts";
+import { User, Role } from "@/types";
 
-const navigationSections = {
-  dashboard: [
-    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, colorBase: "blue", permission: "viewDashboard" },
-  ],
-  complaints: [
-    { href: "/my-tickets", label: "My tickets", icon: ClipboardList, colorBase: "teal", permission: "viewComplaints" },
-    { href: "/dashboard?raise=1", label: "Raise", icon: ClipboardList, colorBase: "emerald", permission: "raiseComplaint" },
-    { href: "/categories", label: "Categories", icon: Tags, colorBase: "purple", permission: "manageCategories" },
-    { href: "/departments", label: "Departments", icon: Building2, colorBase: "indigo", permission: "manageCategories" },
-  ],
-  masterEntries: [
-    { href: "/companies", label: "Companies", icon: Building2, colorBase: "violet", permission: "manageCompany" },
-    { href: "/locations", label: "Locations", icon: MapPin, colorBase: "emerald", permission: "manageLocation" },
-  ],
-  other: [
-    { href: "/settings", label: "Settings", icon: Settings, colorBase: "slate", permission: "accessSettings" },
-  ],
-};
+interface NavItem {
+  href?: string;
+  onClick?: () => void;
+  label: string;
+  icon: LucideIcon;
+  colorBase: string;
+  badge?: number;
+  condition?: (p: any, u: User) => boolean;
+}
 
 const colorMaps: Record<string, { active: string; icon: string }> = {
   blue: { active: "from-blue-600 to-blue-700 dark:from-blue-500 dark:to-blue-600 shadow-blue-500/30", icon: "text-blue-500" },
@@ -38,133 +45,243 @@ const colorMaps: Record<string, { active: string; icon: string }> = {
   green: { active: "from-green-600 to-green-700 dark:from-green-500 dark:to-green-600 shadow-green-500/30", icon: "text-green-500" },
   purple: { active: "from-purple-600 to-purple-700 dark:from-purple-500 dark:to-purple-600 shadow-purple-500/30", icon: "text-purple-500" },
   slate: { active: "from-slate-600 to-slate-700 dark:from-slate-500 dark:to-slate-600 shadow-slate-500/30", icon: "text-slate-500" },
+  sky: { active: "from-sky-600 to-sky-700 dark:from-sky-500 dark:to-sky-600 shadow-sky-500/30", icon: "text-sky-500" },
 };
-
-interface NavItem {
-  href: string;
-  label: string;
-  icon: LucideIcon;
-  colorBase: string;
-  permission: string;
-}
 
 interface HorizontalNavProps {
   isExpanded: boolean;
+  user: User;
 }
 
-export function HorizontalNav({ isExpanded }: HorizontalNavProps) {
+export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
   const pathname = usePathname();
   const { data: permissions } = useCurrentUserPermissions();
+  const { data: counts } = useMxCounts(user, permissions);
+
+  const navigationSections = {
+    dashboard: [
+      { 
+        href: "/dashboard", 
+        label: "Dashboard", 
+        icon: LayoutDashboard, 
+        colorBase: "blue", 
+        condition: (p: any) => p.viewDashboard 
+      },
+    ],
+    complaints: [
+      { 
+        href: "/my-tickets", 
+        label: "My tickets", 
+        icon: ClipboardList, 
+        colorBase: "teal", 
+        condition: (p: any, u: User) => u.role === Role.USER && p.viewComplaints 
+      },
+      { 
+        label: "Raise", 
+        icon: PlusCircle, 
+        colorBase: "emerald", 
+        condition: (p: any, u: User) => u.role === Role.USER && p.raiseComplaint,
+        onClick: () => window.dispatchEvent(new CustomEvent("openRaiseTicket"))
+      },
+      { 
+        href: "/all-tickets", 
+        label: "All tickets", 
+        icon: List, 
+        colorBase: "blue", 
+        condition: (p: any, u: User) => 
+          !!p.viewComplaints && (p.viewAllComplaints || u.role === Role.COORDINATOR || u.role === Role.ADMIN) && u.role !== Role.USER
+      },
+      { 
+        href: "/assign-work", 
+        label: "Assign", 
+        icon: UserPlus, 
+        colorBase: "sky", 
+        badge: counts?.open,
+        condition: (p: any) => p.assignComplaints 
+      },
+      { 
+        href: "/close-tickets", 
+        label: "Close", 
+        icon: CheckCircle, 
+        colorBase: "violet", 
+        badge: counts?.done,
+        condition: (p: any) => p.assignComplaints 
+      },
+      { 
+        href: "/my-work", 
+        label: "Queue", 
+        icon: Wrench, 
+        colorBase: "orange", 
+        condition: (p: any, u: User) => p.handleComplaints && (u.role === Role.HANDLER || u.role === Role.ADMIN)
+      },
+    ],
+    masters: [
+      { 
+        href: "/companies", 
+        label: "Company Master", 
+        icon: Building2, 
+        colorBase: "indigo", 
+        condition: (p: any) => !!p.viewMaster && p.manageCompany 
+      },
+      { 
+        href: "/locations", 
+        label: "Location Master", 
+        icon: MapPin, 
+        colorBase: "emerald", 
+        condition: (p: any) => !!p.viewMaster && p.manageLocation 
+      },
+      { 
+        href: "/categories", 
+        label: "Category Master", 
+        icon: Tags, 
+        colorBase: "purple", 
+        condition: (p: any) => p.manageCategories 
+      },
+      { 
+        href: "/departments", 
+        label: "Dept Master", 
+        icon: Layers, 
+        colorBase: "rose", 
+        condition: (p: any) => p.manageCategories 
+      },
+    ],
+    other: [
+      { 
+        href: "/settings", 
+        label: "Settings", 
+        icon: Settings, 
+        colorBase: "slate", 
+        condition: (p: any) => p.accessSettings 
+      },
+    ],
+  };
 
   const filterItems = (items: NavItem[]) => {
     return items.filter((item) => {
       if (!permissions) return false;
-      const key = item.permission as keyof typeof permissions;
-      return !!permissions[key];
+      if (item.condition) return item.condition(permissions, user);
+      return true;
     });
   };
 
   const visibleDashboard = filterItems(navigationSections.dashboard);
   const visibleComplaints = filterItems(navigationSections.complaints);
-  const visibleMasterEntries = filterItems(navigationSections.masterEntries);
+  const visibleMasterEntries = filterItems(navigationSections.masters);
   const visibleOther = filterItems(navigationSections.other);
 
   const renderNavItem = (item: NavItem) => {
     const Icon = item.icon;
-    const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
-
+    const isActive = item.href ? (pathname === item.href || pathname.startsWith(`${item.href}/`)) : false;
     const colorMap = colorMaps[item.colorBase] || colorMaps.blue;
 
-    return (
-      <Link key={item.href} href={item.href}>
-        <div
-          className={cn(
-            "flex flex-col items-center gap-1.5 px-3 py-2.5 rounded-2xl transition-all duration-500 min-w-[80px] group cursor-pointer relative overflow-hidden",
-            "border-[1.5px]",
-            isActive
-              ? cn("bg-gradient-to-br shadow-xl scale-105 -translate-y-1.5 border-white/20 dark:border-white/10", colorMap.active)
-              : "border-secondary-200 dark:border-white/5 hover:border-primary-600/40 hover:bg-card hover:shadow-2xl hover:-translate-y-1 active:scale-95",
-          )}
-        >
-          {isActive && (
-            <>
-              <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.2),transparent_70%)] pointer-events-none" />
-            </>
-          )}
-          <div className={cn("transition-all duration-500 flex items-center justify-center", isActive ? "scale-110" : "group-hover:scale-110")}>
-            <Icon
-              className={cn(
-                "w-7 h-7 transition-all duration-500", 
-                isActive ? "text-white" : colorMap.icon,
-                isActive && "drop-shadow-[0_0_12px_rgba(255,255,255,0.4)]"
-              )}
-              strokeWidth={isActive ? 2.5 : 1.5}
-            />
-          </div>
-          <span className={cn(
-            "text-[10px] uppercase font-black text-center whitespace-nowrap transition-colors tracking-widest",
-            isActive ? "text-white" : "text-foreground group-hover:text-primary-600 dark:group-hover:text-primary-400",
-          )}>
-            {item.label}
-          </span>
-          {isActive && (
-            <motion.div
-              layoutId="activeTabIndicatorDP"
-              className="absolute -bottom-1.5 inset-x-0 mx-auto w-10 h-1 rounded-full bg-gradient-to-r from-primary-400 via-primary-500 to-primary-400 shadow-[0_0_15px_rgba(59,130,246,0.5)] dark:shadow-[0_0_20px_rgba(59,130,246,0.7)]"
-              transition={{ type: "spring", bounce: 0.3, duration: 0.6 }}
-            />
+    const content = (
+      <div
+        className={cn(
+          "flex flex-col items-center gap-2 px-4 py-3 rounded-[16px] transition-all duration-500 min-w-[100px] group cursor-pointer relative",
+          "border-[1.5px]",
+          isActive
+            ? cn("bg-gradient-to-br shadow-[0_10px_35px_-5px] scale-105 -translate-y-1.5 border-white/40 z-10", colorMap.active)
+            : "border-secondary-100 dark:border-white/5 bg-secondary-50/50 dark:bg-white/[0.03] hover:border-primary-500/30 hover:bg-white dark:hover:border-white/20 dark:hover:bg-white/[0.08] hover:-translate-y-1 active:scale-95",
+        )}
+      >
+        {isActive && (
+          <div className="absolute inset-0 bg-gradient-to-b from-white/30 to-transparent pointer-events-none opacity-50 rounded-[14px]" />
+        )}
+        
+        <div className={cn("transition-all duration-500 flex items-center justify-center relative", isActive ? "scale-110" : "group-hover:scale-110")}>
+          <Icon
+            className={cn(
+              "w-7 h-7 transition-all duration-500", 
+              isActive ? "text-white" : colorMap.icon,
+              isActive && "drop-shadow-[0_0_15px_rgba(255,255,255,0.7)]"
+            )}
+            strokeWidth={isActive ? 2.5 : 1.5}
+          />
+          {item.badge != null && item.badge > 0 && (
+            <span className="absolute -top-3 -right-3 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1.5 text-[10px] font-black text-white shadow-xl ring-2 ring-white dark:ring-[#0d1117]">
+              {item.badge}
+            </span>
           )}
         </div>
+        <span className={cn(
+          "text-[9px] uppercase font-black text-center whitespace-nowrap transition-colors tracking-[0.12em]",
+          isActive ? "text-white" : "text-secondary-500 dark:text-secondary-400 group-hover:text-primary-600 dark:group-hover:text-white",
+        )}>
+          {item.label}
+        </span>
+      </div>
+    );
+
+    if (item.onClick) {
+      return (
+        <button key={item.label} onClick={item.onClick}>
+          {content}
+        </button>
+      );
+    }
+
+    return (
+      <Link key={item.href} href={item.href || "#"}>
+        {content}
       </Link>
     );
   };
 
-  const renderDivider = () => <div className="self-stretch w-px bg-border mx-1 my-3" />;
+  const renderDivider = () => <div className="self-center w-px h-8 bg-secondary-100 dark:bg-white/5 mx-3 mt-4" />;
 
   const renderSectionLabel = (label: string) => (
-    <h3 className="text-[10px] font-bold text-primary-600 uppercase tracking-widest px-3 mb-1">{label}</h3>
+    <div className="flex flex-col items-center w-full mb-1.5">
+       <h3 className="text-[9px] font-black text-secondary-300 dark:text-blue-400/40 uppercase tracking-[0.3em]">{label}</h3>
+    </div>
   );
 
   return (
-    <nav className="w-full bg-card border-b border-border shadow-sm sticky top-14 z-30">
+    <nav className="w-full bg-white dark:bg-[#0d1117] border-b border-secondary-100 dark:border-white/5 sticky top-0 z-30 shadow-none dark:shadow-2xl">
       <div className={cn(
-        "transition-all duration-300 ease-in-out px-4",
+        "transition-all duration-500 ease-in-out",
         isExpanded
-          ? "max-h-[400px] opacity-100 translate-y-0 py-3"
-          : "max-h-0 opacity-0 -translate-y-4 overflow-hidden py-0",
+          ? "max-h-[160px] opacity-100 translate-y-0 py-4"
+          : "max-h-0 opacity-0 -translate-y-10 overflow-hidden py-0",
       )}>
-        <div className="overflow-x-auto pb-2 scrollbar-hide pl-2 pr-2">
-          <div className="flex items-end gap-3 min-w-max">
+        <div className="overflow-x-auto pb-1 scrollbar-hide">
+          <div className="flex items-end gap-3 min-w-max px-6 pt-2">
 
-            {/* Dashboard */}
             {visibleDashboard.length > 0 && (
-              <div className="flex items-center gap-3">
-                {visibleDashboard.map(renderNavItem)}
-                {(visibleComplaints.length > 0 || visibleMasterEntries.length > 0 || visibleOther.length > 0) && renderDivider()}
-              </div>
+              <>
+                <div className="flex flex-col items-center gap-1">
+                  <div className="h-4" />
+                  <div className="flex gap-3">{visibleDashboard.map(renderNavItem)}</div>
+                </div>
+                {renderDivider()}
+              </>
             )}
 
             {visibleComplaints.length > 0 && (
-              <div className="flex flex-col items-center gap-1">
-                {renderSectionLabel("Complaints")}
-                <div className="flex items-center gap-3">
+              <>
+                <div className="flex flex-col items-center gap-1">
+                  {renderSectionLabel("Complaints")}
                   <div className="flex gap-3">{visibleComplaints.map(renderNavItem)}</div>
-                  {(visibleMasterEntries.length > 0 || visibleOther.length > 0) && renderDivider()}
                 </div>
-              </div>
+                {renderDivider()}
+              </>
             )}
 
             {visibleMasterEntries.length > 0 && (
-              <div className="flex flex-col items-center gap-1">
-                {renderSectionLabel("Masters")}
-                <div className="flex items-center gap-3">
-                  <div className="flex gap-3">{visibleMasterEntries.map(renderNavItem)}</div>
-                  {visibleOther.length > 0 && renderDivider()}
+              <>
+                <div className="flex flex-col items-center gap-1">
+                  {renderSectionLabel("Master Entry")}
+                   <div className="flex gap-3">{visibleMasterEntries.map(renderNavItem)}</div>
                 </div>
-              </div>
+                {renderDivider()}
+              </>
             )}
 
-            {visibleOther.length > 0 && <div className="flex gap-3">{visibleOther.map(renderNavItem)}</div>}
+            {visibleOther.length > 0 && (
+               <div className="flex flex-col items-center gap-1">
+                 <div className="h-4" />
+                 <div className="flex gap-3">{visibleOther.map(renderNavItem)}</div>
+               </div>
+            )}
 
           </div>
         </div>
@@ -172,3 +289,6 @@ export function HorizontalNav({ isExpanded }: HorizontalNavProps) {
     </nav>
   );
 }
+
+
+

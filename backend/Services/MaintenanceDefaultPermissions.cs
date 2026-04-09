@@ -57,7 +57,7 @@ namespace net_backend.Services
                     p.HandleComplaints = true;
                     p.ManageCategories = false;
                     break;
-                case Role.EMPLOYEE:
+                case Role.USER:
                 default:
                     p.ViewDashboard = true;
                     p.ViewComplaints = true;

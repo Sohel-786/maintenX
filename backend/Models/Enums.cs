@@ -2,7 +2,7 @@ namespace net_backend.Models
 {
     public enum Role
     {
-        EMPLOYEE = 0,
+        USER = 0,
         COORDINATOR = 1,
         HANDLER = 2,
         ADMIN = 3

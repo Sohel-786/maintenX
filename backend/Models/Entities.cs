@@ -202,7 +202,7 @@ namespace net_backend.Models
         public string FirstName { get; set; } = string.Empty;
         [Required]
         public string LastName { get; set; } = string.Empty;
-        public Role Role { get; set; } = Role.EMPLOYEE;
+        public Role Role { get; set; } = Role.USER;
         public bool IsActive { get; set; } = true;
         public string? Avatar { get; set; }
         public string? MobileNumber { get; set; }

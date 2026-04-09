@@ -14,6 +14,7 @@ import { useEffect, useMemo } from "react";
 import { Save, X, MapPin } from "lucide-react";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 
 const schema = z.object({
   name: z.string().min(1, "Location name is required").max(200),
@@ -149,30 +150,16 @@ export function LocationDialog({ isOpen, onClose, onSubmit, item, isLoading, rea
         </div>
 
         {!!item && (
-          <div className="flex items-center gap-3 rounded-lg border border-border bg-muted/20 px-4 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                if (isReadOnly) return;
-                setValue("isActive", !isActive, { shouldDirty: true });
-              }}
-              disabled={isReadOnly}
-              className={cn(
-                "relative h-7 w-12 shrink-0 rounded-full transition-colors",
-                isActive ? "bg-primary" : "bg-muted-foreground/30",
-              )}
-            >
-              <span
-                className={cn(
-                  "absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition-transform",
-                  isActive ? "left-[26px]" : "left-0.5",
-                )}
-              />
-            </button>
-            <div>
-              <p className="text-sm font-semibold">Active</p>
-              <p className="text-xs text-muted-foreground">Inactive locations are excluded from new assignments where applicable.</p>
+          <div className="flex items-center justify-between rounded-xl border border-secondary-200 bg-secondary-50/50 p-4 transition-colors hover:bg-secondary-50 dark:border-white/10 dark:bg-white/5">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-bold text-secondary-900 dark:text-white">Active</Label>
+              <p className="text-xs text-muted-foreground">Inactive locations are excluded from new assignments.</p>
             </div>
+            <Switch
+              checked={isActive}
+              onCheckedChange={(v) => setValue("isActive", v, { shouldDirty: true })}
+              disabled={isReadOnly}
+            />
           </div>
         )}
 

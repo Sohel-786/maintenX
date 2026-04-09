@@ -17,6 +17,14 @@
   --mx-shadow: 0 4px 16px rgba(10, 22, 40, 0.12);
 }
 
+.dark {
+  --mx-off: #0d1117;
+  --mx-border: #30363d;
+  --mx-text: #f8f9fa;
+  --mx-muted: #8b949e;
+  --mx-navy-50: #161b22;
+}
+
 .mx-page {
   background: var(--mx-off);
   color: var(--mx-text);

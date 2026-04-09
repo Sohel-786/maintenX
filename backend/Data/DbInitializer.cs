@@ -154,19 +154,43 @@ namespace net_backend.Data
                 Console.WriteLine($"Admin location access backfill skipped: {ex.Message}");
             }
 
-            SeedDefaultCategories(context, seedLocationId);
-            SeedDefaultDepartments(context, seedLocationId);
+            SeedDefaultCategories(context, seedCompanyId, seedLocationId);
+            SeedDefaultDepartments(context, seedCompanyId, seedLocationId);
+
+            // Ensure seeded admin has a valid department value once masters exist.
+            try
+            {
+                var seededAdmin = context.Users.FirstOrDefault(u => u.Username == "mitul");
+                if (seededAdmin != null)
+                {
+                    var hasAdminDept = context.FacilityDepartments.Any(d => d.CompanyId == seedCompanyId && d.Name == "Admin");
+                    if (hasAdminDept)
+                    {
+                        seededAdmin.ProfileDepartment = "Admin";
+                        seededAdmin.DefaultCompanyId = seedCompanyId;
+                        seededAdmin.DefaultLocationId = seedLocationId;
+                        seededAdmin.UpdatedAt = DateTime.Now;
+                        context.SaveChanges();
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Admin profile department seed skipped: {ex.Message}");
+            }
         }
 
-        private static void SeedDefaultCategories(ApplicationDbContext context, int seedLocationId)
+        private static void SeedDefaultCategories(ApplicationDbContext context, int seedCompanyId, int seedLocationId)
         {
-            if (context.ComplaintCategories.Any(c => c.LocationId == seedLocationId))
+            // Company-scoped masters: seed once per company.
+            if (context.ComplaintCategories.Any(c => c.CompanyId == seedCompanyId))
                 return;
-            var defaults = new[] { "HVAC", "Electrical", "Plumbing", "Cleaning", "IT / AV", "Safety", "General" };
+            var defaults = new[] { "Lift", "Electrical", "Plumbing", "Cleaning", "IT", "Safety", "AC", "General" };
             foreach (var name in defaults)
             {
                 context.ComplaintCategories.Add(new ComplaintCategory
                 {
+                    CompanyId = seedCompanyId,
                     LocationId = seedLocationId,
                     Name = name,
                     IsActive = true,
@@ -177,15 +201,17 @@ namespace net_backend.Data
             context.SaveChanges();
         }
 
-        private static void SeedDefaultDepartments(ApplicationDbContext context, int seedLocationId)
+        private static void SeedDefaultDepartments(ApplicationDbContext context, int seedCompanyId, int seedLocationId)
         {
-            if (context.FacilityDepartments.Any(d => d.LocationId == seedLocationId))
+            // Company-scoped masters: seed once per company.
+            if (context.FacilityDepartments.Any(d => d.CompanyId == seedCompanyId))
                 return;
             var defaults = new[] { "Production", "Store", "Inward", "Gate", "QC", "CNC", "Purchase", "IT", "Admin" };
             foreach (var name in defaults)
             {
                 context.FacilityDepartments.Add(new FacilityDepartment
                 {
+                    CompanyId = seedCompanyId,
                     LocationId = seedLocationId,
                     Name = name,
                     IsActive = true,

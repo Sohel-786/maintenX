@@ -207,46 +207,37 @@ namespace net_backend.Controllers
             await using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                // Full system reset (baseline rebuild):
+                // - Remove ALL users (including current), permissions and access
+                // - Remove ALL companies/locations
+                // - Remove ALL master + transactional ticket data
+                // Then re-seed baseline via DbInitializer (1 company, 1 location, 1 admin, default masters).
+
                 _context.ComplaintLogs.RemoveRange(_context.ComplaintLogs);
                 _context.Complaints.RemoveRange(_context.Complaints);
                 _context.ComplaintCategories.RemoveRange(_context.ComplaintCategories);
                 _context.FacilityDepartments.RemoveRange(_context.FacilityDepartments);
+
+                _context.UserLocationAccess.RemoveRange(_context.UserLocationAccess);
+                _context.UserPermissions.RemoveRange(_context.UserPermissions);
+                _context.AuditLogs.RemoveRange(_context.AuditLogs);
+                _context.Users.RemoveRange(_context.Users);
+
+                _context.Locations.RemoveRange(_context.Locations);
+                _context.Companies.RemoveRange(_context.Companies);
+
                 await _context.SaveChangesAsync();
 
-                var seedLocId = await _context.Locations.OrderBy(l => l.Id).Select(l => l.Id).FirstOrDefaultAsync();
-                if (seedLocId > 0)
-                {
-                    var defaults = new[] { "HVAC", "Electrical", "Plumbing", "Cleaning", "IT / AV", "Safety", "General" };
-                    foreach (var name in defaults)
-                    {
-                        _context.ComplaintCategories.Add(new ComplaintCategory
-                        {
-                            LocationId = seedLocId,
-                            Name = name,
-                            IsActive = true,
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now
-                        });
-                    }
-
-                    var deptDefaults = new[] { "Production", "Store", "Inward", "Gate", "QC", "CNC", "Purchase", "IT", "Admin" };
-                    foreach (var name in deptDefaults)
-                    {
-                        _context.FacilityDepartments.Add(new FacilityDepartment
-                        {
-                            LocationId = seedLocId,
-                            Name = name,
-                            IsActive = true,
-                            CreatedAt = DateTime.Now,
-                            UpdatedAt = DateTime.Now
-                        });
-                    }
-
-                    await _context.SaveChangesAsync();
-                }
+                // Rebuild baseline data
+                DbInitializer.Initialize(_context, _aesKey);
 
                 await transaction.CommitAsync();
-                return Ok(new ApiResponse<string> { Success = true, Message = "Complaint data reset.", Data = "Success" });
+                return Ok(new ApiResponse<string>
+                {
+                    Success = true,
+                    Message = "System reset completed. Please log in again with the seeded admin account.",
+                    Data = "Success"
+                });
             }
             catch (Exception ex)
             {

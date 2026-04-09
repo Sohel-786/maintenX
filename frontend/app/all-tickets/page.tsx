@@ -14,7 +14,7 @@ export default function AllTicketsPage() {
 
   useEffect(() => {
     if (!user || !permissions) return;
-    const narrow = user.role === Role.EMPLOYEE && !permissions.viewAllComplaints;
+    const narrow = user.role === Role.USER && !permissions.viewAllComplaints;
     if (narrow) router.replace("/my-tickets");
   }, [user, permissions, router]);
 
@@ -26,7 +26,7 @@ export default function AllTicketsPage() {
     );
   }
 
-  const narrow = user.role === Role.EMPLOYEE && !permissions.viewAllComplaints;
+  const narrow = user.role === Role.USER && !permissions.viewAllComplaints;
   if (narrow) return null;
 
   return (
@@ -38,3 +38,4 @@ export default function AllTicketsPage() {
     />
   );
 }
+

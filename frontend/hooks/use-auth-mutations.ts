@@ -54,7 +54,7 @@ export function useLogin() {
         const role = data.user.role as Role;
         if (role === Role.HANDLER) {
           router.push('/complaints');
-        } else if (role === Role.EMPLOYEE) {
+        } else if (role === Role.USER) {
           router.push('/complaints/raise');
         } else {
           router.push('/dashboard');
@@ -100,3 +100,4 @@ export function useLogout() {
     },
   });
 }
+

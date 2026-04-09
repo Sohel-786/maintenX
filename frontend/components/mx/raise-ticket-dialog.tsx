@@ -44,6 +44,7 @@ export function RaiseTicketDialog({
   const cameraRef = useRef<CameraPhotoInputRef>(null);
   const discardKeepRef = useRef<HTMLButtonElement | null>(null);
   const discardDiscardRef = useRef<HTMLButtonElement | null>(null);
+  const [isBaselineSet, setIsBaselineSet] = useState(false);
 
   const form = useForm<RaiseTicketFormValues>({
     resolver: zodResolver(schema),
@@ -55,18 +56,25 @@ export function RaiseTicketDialog({
   });
 
   const effectiveAttachmentCount = pendingPhotoFiles.length;
-  const isDirty = form.formState.isDirty || pendingPhotoFiles.length > 0;
+  // A form is only truly 'dirty' if a baseline was set and the user modified it, or if photos were added.
+  const isDirty = (isBaselineSet && form.formState.isDirty) || pendingPhotoFiles.length > 0;
 
   useEffect(() => {
-    if (!open) return;
-    form.reset({
-      categoryId: 0,
-      departmentId: 0,
-      description: "",
-    });
-    setPendingPhotoFiles([]);
-    setDiscardConfirmOpen(false);
-  }, [open, form]);
+    if (!open) {
+      if (isBaselineSet) setIsBaselineSet(false);
+      return;
+    }
+    // Only reset if we haven't set the baseline for this 'open' session yet
+    if (!isBaselineSet) {
+      form.reset({
+        categoryId: 0,
+        departmentId: 0,
+        description: "",
+      });
+      setPendingPhotoFiles([]);
+      setDiscardConfirmOpen(false);
+    }
+  }, [open, form, isBaselineSet]);
 
   useEffect(() => {
     if (!discardConfirmOpen) return;
@@ -93,16 +101,27 @@ export function RaiseTicketDialog({
   });
 
   // Default department selection from user's profileDepartment (name -> id mapping)
+  // We use this to set the initial CLEAN baseline of the form.
   useEffect(() => {
-    if (!open) return;
+    if (!open || isBaselineSet) return;
     if (!departments.length) return;
-    const current = form.getValues("departmentId");
-    if (current && current > 0) return;
+    
     const pref = currentUser?.profileDepartment?.trim();
-    if (!pref) return;
-    const match = departments.find((d) => d.name.trim().toLowerCase() === pref.toLowerCase());
-    if (match) form.setValue("departmentId", match.id, { shouldValidate: true });
-  }, [open, departments, currentUser?.profileDepartment, form]);
+    let initialDeptId = 0;
+    
+    if (pref) {
+      const match = departments.find((d) => d.name.trim().toLowerCase() === pref.toLowerCase());
+      if (match) initialDeptId = match.id;
+    }
+
+    // Reset the form with the profile-derived values so they are considered NOT DIRTY (the baseline)
+    form.reset({
+      categoryId: 0,
+      departmentId: initialDeptId,
+      description: "",
+    });
+    setIsBaselineSet(true);
+  }, [open, departments, currentUser?.profileDepartment, form, isBaselineSet]);
 
   const mutation = useMutation({
     mutationFn: async (values: RaiseTicketFormValues) => {

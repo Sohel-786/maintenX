@@ -13,6 +13,7 @@ import { useCompaniesActive, useLocationsActive } from "@/hooks/use-settings";
 import { Save, X, Loader2 } from "lucide-react";
 import { useEffect } from "react";
 import { Select } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 
 const userSchema = z.object({
   username: z.string().min(3, "Username must be at least 3 characters"),
@@ -26,12 +27,12 @@ const userSchema = z.object({
 }).superRefine((data, ctx) => {
   if (!data.password && !data.companyId) return;
   const mobileMandatory =
-    data.role === Role.EMPLOYEE || data.role === Role.COORDINATOR || data.role === Role.HANDLER;
+    data.role === Role.USER || data.role === Role.COORDINATOR || data.role === Role.HANDLER;
   const mobile = data.mobileNumber?.trim();
   if (mobileMandatory && (!mobile || mobile.length === 0)) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
-      message: "Mobile number is mandatory for Employee, Coordinator, and Handler",
+      message: "Mobile number is mandatory for User, Coordinator, and Handler",
       path: ["mobileNumber"],
     });
   }
@@ -64,7 +65,7 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
   } = useForm<UserFormValues>({
     resolver: zodResolver(userSchema),
     defaultValues: {
-      role: Role.EMPLOYEE,
+      role: Role.USER,
       isActive: true,
     },
   });
@@ -91,7 +92,7 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
         username: "",
         password: "",
         name: "",
-        role: Role.EMPLOYEE,
+        role: Role.USER,
         isActive: true,
         mobileNumber: "",
         companyId: undefined,
@@ -193,7 +194,7 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
               onValueChange={(v) => setValue("role", v as Role, { shouldValidate: true })}
               className="h-11"
             >
-              <option value={Role.EMPLOYEE}>Employee</option>
+              <option value={Role.USER}>User</option>
               <option value={Role.COORDINATOR}>Coordinator</option>
               <option value={Role.HANDLER}>Handler</option>
               <option value={Role.ADMIN}>Admin</option>
@@ -235,20 +236,43 @@ export function UserDialog({ isOpen, onClose, user }: UserDialogProps) {
             {errors.locationId && <p className="text-xs text-rose-500">{errors.locationId.message}</p>}
           </div>
         </div>
-        <div className="flex items-center gap-3 py-2">
-          <input type="checkbox" {...register("isActive")} className="w-4 h-4 rounded border-secondary-300 text-primary-600" id="user-active" />
-          <Label htmlFor="user-active" className="text-sm font-medium text-secondary-700">Active</Label>
+        <div className="flex items-center justify-between rounded-xl border border-secondary-200 bg-secondary-50/50 p-4 transition-colors hover:bg-secondary-50 dark:border-white/10 dark:bg-white/5">
+          <div className="space-y-0.5">
+            <Label htmlFor="user-active" className="text-sm font-bold text-secondary-900 dark:text-white">Active</Label>
+            <p className="text-xs text-secondary-500">
+              Inactive users cannot sign in and won't appear in handler assignment where applicable.
+            </p>
+          </div>
+          <Switch
+            id="user-active"
+            checked={watch("isActive")}
+            onCheckedChange={(v) => setValue("isActive", v, { shouldDirty: true })}
+          />
         </div>
-        <div className="flex gap-3 pt-4 border-t border-secondary-100">
-          <Button type="submit" disabled={isPending} className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold h-11">
-            {isPending ? <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving... </> : <><Save className="w-4 h-4 mr-2" /> Save</>}
-          </Button>
-          <Button type="button" variant="outline" onClick={onClose} className="flex-1 border-secondary-300 text-secondary-700 font-bold h-11">
+        <div className="-mx-6 flex gap-4 mt-8 border-t border-secondary-100 bg-secondary-50/30 px-6 pt-5 pb-1 dark:border-white/10 dark:bg-white/[0.02]">
+          <Button 
+            type="button" 
+            variant="outline" 
+            onClick={onClose} 
+            className="flex-1 border-secondary-300 text-secondary-700 font-bold h-12 shadow-sm hover:bg-white active:scale-[0.98] transition-all"
+          >
             <X className="w-4 h-4 mr-2" />
             Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            disabled={isPending} 
+            className="flex-1 bg-primary-600 hover:bg-primary-700 text-white font-bold h-12 shadow-md shadow-primary-500/20 active:scale-[0.98] transition-all"
+          >
+            {isPending ? (
+              <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Saving...</>
+            ) : (
+              <><Save className="w-4 h-4 mr-2" /> Save User</>
+            )}
           </Button>
         </div>
       </form>
     </Dialog>
   );
 }
+

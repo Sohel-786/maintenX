@@ -78,6 +78,7 @@ namespace net_backend.DTOs
     public class CreateComplaintCategoryRequest
     {
         public string Name { get; set; } = string.Empty;
+        public bool? IsActive { get; set; }
     }
 
     public class FacilityDepartmentDto
@@ -90,10 +91,12 @@ namespace net_backend.DTOs
     public class CreateFacilityDepartmentRequest
     {
         public string Name { get; set; } = string.Empty;
+        public bool? IsActive { get; set; }
     }
 
     public class UpdateFacilityDepartmentRequest
     {
         public string Name { get; set; } = string.Empty;
+        public bool? IsActive { get; set; }
     }
 }

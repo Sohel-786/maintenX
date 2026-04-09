@@ -102,10 +102,10 @@ namespace net_backend.Controllers
             return user?.Role == Role.HANDLER;
         }
 
-        protected async Task<bool> IsEmployee()
+        protected async Task<bool> IsUser()
         {
             var user = await _context.Users.FindAsync(CurrentUserId);
-            return user?.Role == Role.EMPLOYEE;
+            return user?.Role == Role.USER;
         }
 
         private async Task<(Role role, UserPermission? permission)> GetPermissionContextAsync()
@@ -118,7 +118,7 @@ namespace net_backend.Controllers
                 .Include(u => u.Permission)
                 .FirstOrDefaultAsync(u => u.Id == CurrentUserId);
 
-            var ctx = (user?.Role ?? Role.EMPLOYEE, user?.Permission);
+            var ctx = (user?.Role ?? Role.USER, user?.Permission);
             HttpContext.Items[PermissionCacheKey] = ctx;
             return ctx;
         }

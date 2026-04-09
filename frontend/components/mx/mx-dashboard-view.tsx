@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { formatDate, formatDateTime } from "@/lib/utils";
+import { cn, formatDate, formatDateTime } from "@/lib/utils";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import {
   Ticket,
@@ -65,12 +65,11 @@ export function MxDashboardView() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [detailId, setDetailId] = useState<number | null>(null);
-  const [raiseOpen, setRaiseOpen] = useState(false);
   const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     if (searchParams.get("raise") === "1") {
-      setRaiseOpen(true);
+      window.dispatchEvent(new CustomEvent("openRaiseTicket"));
       router.replace(pathname, { scroll: false });
     }
   }, [searchParams, router, pathname]);
@@ -156,45 +155,26 @@ export function MxDashboardView() {
     if (!selected || exporting) return;
     setExporting(true);
     try {
-      const res = await api.get("/complaints", {
-        params: {
-          ...listParams,
-          page: 1,
-          pageSize: 0,
-        },
+      const res = await api.get("/complaints/export", {
+        params: listParams,
+        responseType: "blob",
       });
-      const data = (res.data.data ?? []) as ComplaintListItem[];
-      const headers = showCompany
-        ? ["Ticket", "Category", "Department", "Company", "Status", "Handler", "Updated"]
-        : ["Ticket", "Category", "Department", "Status", "Handler", "Updated"];
-      const csvRows = data.map((r) => {
-        if (showCompany) {
-          return [
-            r.complaintNo,
-            r.categoryName ?? "",
-            r.departmentName ?? "",
-            r.companyName ?? "",
-            r.status,
-            r.assignedHandlerName ?? "—",
-            formatDateTime(r.updatedAt),
-          ];
-        }
-        return [
-          r.complaintNo,
-          r.categoryName ?? "",
-          r.departmentName ?? "",
-          r.status,
-          r.assignedHandlerName ?? "—",
-          formatDateTime(r.updatedAt),
-        ];
-      });
-      downloadCsv(`dashboard-tickets-${format(new Date(), "yyyyMMdd-HHmm")}.csv`, headers, csvRows);
+      
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const link = document.createElement("a");
+      link.href = url;
+      const dateStr = format(new Date(), "yyyyMMdd_HHmm");
+      link.setAttribute("download", `Tickets_Export_${dateStr}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
     } catch (err) {
       console.error("Export failed", err);
     } finally {
       setExporting(false);
     }
-  }, [listParams, selected, showCompany, exporting]);
+  }, [listParams, selected, exporting]);
 
   const colCount = (showCompany ? 1 : 0) + 7;
 
@@ -212,7 +192,7 @@ export function MxDashboardView() {
             <Button
               type="button"
               className="gap-2 bg-primary-600 font-semibold hover:bg-primary-700"
-              onClick={() => setRaiseOpen(true)}
+              onClick={() => window.dispatchEvent(new CustomEvent("openRaiseTicket"))}
             >
               <PlusCircle className="h-4 w-4" />
               Raise ticket
@@ -225,43 +205,63 @@ export function MxDashboardView() {
         <div className="flex justify-center py-16 text-secondary-500">Loading dashboard…</div>
       ) : (
         <>
-          <div className="mb-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
             {[
               {
                 key: "total" as const,
                 label: "Total tickets",
                 value: s?.total ?? 0,
                 icon: Ticket,
-                baseBg: "bg-amber-50/40",
-                shadowColor: "shadow-amber-500/20",
-                iconColor: "text-amber-600",
+                theme: {
+                  id: "blue",
+                  border: "dark:border-blue-500/40 border-amber-200",
+                  active: "bg-blue-600 text-white shadow-blue-500/40 border-blue-400",
+                  inactive: "bg-white dark:bg-slate-900/40 dark:backdrop-blur-md",
+                  iconWrapper: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                  shadow: "shadow-blue-500/10"
+                }
               },
               {
                 key: "open" as const,
                 label: "Open",
                 value: s?.open ?? 0,
                 icon: CircleDot,
-                baseBg: "bg-sky-50/40",
-                shadowColor: "shadow-sky-500/20",
-                iconColor: "text-sky-600",
+                theme: {
+                  id: "sky",
+                  border: "dark:border-sky-500/40 border-sky-200",
+                  active: "bg-sky-600 text-white shadow-sky-500/40 border-sky-400",
+                  inactive: "bg-white dark:bg-slate-900/40 dark:backdrop-blur-md",
+                  iconWrapper: "bg-sky-50 dark:bg-sky-500/10 text-sky-600 dark:text-sky-400",
+                  shadow: "shadow-sky-500/10"
+                }
               },
               {
                 key: "inprogress" as const,
                 label: "In progress",
                 value: s?.inProgress ?? 0,
                 icon: Zap,
-                baseBg: "bg-orange-50/40",
-                shadowColor: "shadow-orange-500/20",
-                iconColor: "text-orange-600",
+                theme: {
+                  id: "orange",
+                  border: "dark:border-orange-500/40 border-orange-200",
+                  active: "bg-orange-600 text-white shadow-orange-500/40 border-orange-400",
+                  inactive: "bg-white dark:bg-slate-900/40 dark:backdrop-blur-md",
+                  iconWrapper: "bg-orange-50 dark:bg-orange-500/10 text-orange-600 dark:text-orange-400",
+                  shadow: "shadow-orange-500/10"
+                }
               },
               {
                 key: "completed" as const,
                 label: "Completed",
                 value: s?.completed ?? 0,
                 icon: CheckCircle2,
-                baseBg: "bg-emerald-50/40",
-                shadowColor: "shadow-emerald-500/20",
-                iconColor: "text-emerald-600",
+                theme: {
+                  id: "emerald",
+                  border: "dark:border-emerald-500/40 border-emerald-200",
+                  active: "bg-emerald-600 text-white shadow-emerald-500/40 border-emerald-400",
+                  inactive: "bg-white dark:bg-slate-900/40 dark:backdrop-blur-md",
+                  iconWrapper: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
+                  shadow: "shadow-emerald-500/10"
+                }
               },
             ].map((c) => {
               const Icon = c.icon;
@@ -270,6 +270,9 @@ export function MxDashboardView() {
                 (c.key === "open" && statusGroup === "open") ||
                 (c.key === "inprogress" && statusGroup === "inprogress") ||
                 (c.key === "completed" && statusGroup === "completed");
+              
+              const theme = c.theme;
+
               return (
                 <button
                   key={c.key}
@@ -281,24 +284,54 @@ export function MxDashboardView() {
                     else if (c.key === "inprogress") setStatusGroup("inprogress");
                     else setStatusGroup("completed");
                   }}
-                  className={[
-                    "relative h-full overflow-hidden rounded-2xl border border-secondary-100/60 p-5 text-left shadow-xl transition-all duration-500 ease-out",
-                    c.baseBg,
-                    c.shadowColor,
-                    "hover:shadow-2xl hover:-translate-y-0.5",
-                    active ? "ring-2 ring-primary-200 ring-offset-2" : "",
-                  ].join(" ")}
+                  className={cn(
+                    "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-500 ease-out",
+                    theme.border,
+                    active ? theme.active : cn(theme.inactive, theme.shadow, "hover:scale-[1.02] hover:shadow-2xl hover:border-white/20")
+                  )}
                 >
-                  <div className="flex items-start justify-between gap-4">
+                  {/* Glass highlight effect */}
+                  {!active && (
+                    <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
+                  )}
+                  
+                  <div className="relative flex items-start justify-between gap-4">
                     <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-secondary-500">{c.label}</p>
-                      <p className="mt-1 text-3xl font-extrabold tabular-nums text-secondary-900">{c.value}</p>
+                      <p className={cn(
+                        "text-[10px] font-black uppercase tracking-[0.15em]",
+                        active ? "text-white/80" : "text-secondary-500 dark:text-secondary-400"
+                      )}>
+                        {c.label}
+                      </p>
+                      <p className={cn(
+                        "mt-1.5 text-4xl font-black tabular-nums tracking-tighter",
+                        active ? "text-white" : "text-secondary-900 dark:text-white"
+                      )}>
+                        {c.value}
+                      </p>
                     </div>
-                    <div className="rounded-xl bg-secondary-50 p-3 shadow-sm transition-all duration-300 hover:scale-105">
-                      <Icon className={`h-5 w-5 ${c.iconColor}`} />
+                    <div className={cn(
+                      "rounded-xl p-3 shadow-lg transition-transform duration-500 group-hover:rotate-12",
+                      active ? "bg-white/20 text-white backdrop-blur-sm" : theme.iconWrapper
+                    )}>
+                      <Icon className="h-5 w-5" />
                     </div>
                   </div>
-                  <div className={`absolute -right-6 -bottom-6 h-24 w-24 rounded-full ${c.iconColor} opacity-[0.06] pointer-events-none transition-opacity duration-500`} />
+
+                  <div className="mt-4 flex items-center gap-1.5">
+                     <span className={cn(
+                       "text-[11px] font-bold tracking-tight",
+                       active ? "text-white/70" : "text-secondary-400 dark:text-secondary-500 hover:text-secondary-300"
+                     )}>
+                       {active ? "Currently filtered" : "View table →"}
+                     </span>
+                  </div>
+
+                  {/* Decorative corner shape */}
+                  <div className={cn(
+                    "absolute -right-6 -bottom-6 h-24 w-24 rounded-full pointer-events-none transition-all duration-700",
+                    active ? "bg-white/10 scale-150" : "bg-white/5 opacity-0 group-hover:opacity-100 group-hover:scale-110"
+                  )} />
                 </button>
               );
             })}
@@ -462,7 +495,7 @@ export function MxDashboardView() {
                         </td>
                         <td className="px-4 py-3">{r.assignedHandlerName ?? "—"}</td>
                         <td className="px-4 py-3 text-xs text-secondary-600">
-                          {formatDate(r.updatedAt)}
+                          {formatDateTime(r.updatedAt)}
                         </td>
                       </tr>
                     ))
@@ -487,7 +520,7 @@ export function MxDashboardView() {
               KPI overview — all time
             </h2>
             <p className="mb-4 text-sm text-secondary-500">{kpiContext}</p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
               {[
                 { label: "Total tickets", value: metrics.kpi.totalTickets, sub: "In scope" },
                 { label: "With handler", value: metrics.kpi.ticketsWithHandler, sub: "Assigned field set" },
@@ -496,10 +529,13 @@ export function MxDashboardView() {
                 { label: "Reopened", value: metrics.kpi.reopened, sub: "Coordinator reopen" },
                 { label: "Reassigned", value: metrics.kpi.reassigned, sub: "Handler changed" },
               ].map((k) => (
-                <Card key={k.label} className="border-secondary-200 p-4 shadow-sm">
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-secondary-500">{k.label}</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums text-secondary-900">{k.value}</p>
-                  <p className="mt-1 text-xs text-secondary-500">{k.sub}</p>
+                <Card 
+                  key={k.label} 
+                  className="group border-secondary-200 bg-white/50 p-4 transition-all duration-300 hover:-translate-y-1 hover:border-primary-500/30 hover:shadow-lg dark:border-border dark:bg-slate-900/40 dark:backdrop-blur-sm"
+                >
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-secondary-500 dark:text-secondary-400">{k.label}</p>
+                  <p className="mt-1.5 text-2xl font-black tabular-nums tracking-tight text-secondary-900 dark:text-white">{k.value}</p>
+                  <p className="mt-1 text-[11px] font-medium text-secondary-400 dark:text-secondary-500">{k.sub}</p>
                 </Card>
               ))}
             </div>
@@ -558,7 +594,6 @@ export function MxDashboardView() {
       )}
 
       <TicketDetailDialog detailId={detailId} onClose={() => setDetailId(null)} />
-      <RaiseTicketDialog open={raiseOpen} onClose={() => setRaiseOpen(false)} />
     </div>
   );
 }

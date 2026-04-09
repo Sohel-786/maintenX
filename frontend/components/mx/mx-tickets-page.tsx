@@ -3,7 +3,6 @@
 import { useRef, useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "next/navigation";
-import Link from "next/link";
 import api from "@/lib/api";
 import { ComplaintCategory, ComplaintListItem, ComplaintStatus } from "@/types";
 import { useCurrentUserPermissions } from "@/hooks/use-settings";
@@ -55,8 +54,8 @@ export function MxTicketsPage({
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 400);
   const [categoryId, setCategoryId] = useState<number | "">("");
-  const [localStatus, setLocalStatus] = useState<ComplaintStatus | "">(
-    () => lockStatus ?? (urlStatus || statusFilter),
+  const [localStatus, setLocalStatus] = useState<ComplaintStatus | "" | "VIRTUAL_OPEN">(
+    () => (lockStatus ?? (urlStatus || statusFilter)) as any,
   );
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
@@ -104,7 +103,8 @@ export function MxTicketsPage({
       const res = await api.get("/complaints", {
         params: {
           search: debouncedSearch.trim() || undefined,
-          status: effectiveStatus || undefined,
+          status: effectiveStatus === "VIRTUAL_OPEN" ? undefined : (effectiveStatus || undefined),
+          statusGroup: effectiveStatus === "VIRTUAL_OPEN" ? "inprogress" : undefined,
           categoryId: categoryId === "" ? undefined : categoryId,
           page,
           pageSize,
@@ -182,12 +182,13 @@ export function MxTicketsPage({
           {subtitle && <p className="font-medium text-secondary-500">{subtitle}</p>}
         </div>
         {showRaiseLink && permissions?.raiseComplaint && (
-          <Link
-            href="/dashboard?raise=1"
+          <button
+            type="button"
             className="inline-flex h-10 items-center justify-center rounded-md bg-primary-600 px-4 text-sm font-bold text-white shadow-md hover:bg-primary-700"
+            onClick={() => window.dispatchEvent(new CustomEvent("openRaiseTicket"))}
           >
             Raise ticket
-          </Link>
+          </button>
         )}
       </div>
 
@@ -226,10 +227,11 @@ export function MxTicketsPage({
               <select
                 className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
                 value={localStatus}
-                onChange={(e) => setLocalStatus((e.target.value || "") as ComplaintStatus | "")}
+                onChange={(e) => setLocalStatus(e.target.value as any)}
               >
                 <option value="">All</option>
-                {Object.values(ComplaintStatus).map((s) => (
+                <option value="VIRTUAL_OPEN">Open</option>
+                {Object.values(ComplaintStatus).filter(s => s !== "Open").map((s) => (
                   <option key={s} value={s}>
                     {s}
                   </option>

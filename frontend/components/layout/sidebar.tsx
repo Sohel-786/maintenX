@@ -68,7 +68,7 @@ export function Sidebar({ userRole, expanded, onExpandChange, sidebarWidth }: Si
         ? "Coordinator"
         : userRole === Role.HANDLER
           ? "Handler"
-          : "Employee";
+          : "User";
 
   const linkClass = (href: string, iconOnly = false) => {
     const isActive = pathname === href || pathname.startsWith(`${href}/`);
@@ -176,3 +176,4 @@ export function Sidebar({ userRole, expanded, onExpandChange, sidebarWidth }: Si
     </aside>
   );
 }
+

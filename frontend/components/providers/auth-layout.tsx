@@ -15,6 +15,7 @@ import { cn } from '@/lib/utils';
 import { useLocationContext, CompanyLocationAccess } from "@/contexts/location-context";
 import { OrgContextDialog } from "@/components/auth/org-context-dialog";
 import { MxAppChrome } from "@/components/mx/mx-app-chrome";
+import { RaiseTicketDialog } from "@/components/mx/raise-ticket-dialog";
 
 /** Query key prefixes that depend on current company/location; refetch when user switches location. */
 const LOCATION_SCOPED_QUERY_KEYS: readonly string[] = [
@@ -64,7 +65,7 @@ function checkRouteAccess(pathname: string, permissions: UserPermission, user: U
 function getFirstAllowedRoute(permissions: UserPermission | null | undefined, user: User | null): string {
   if (!permissions) return '/dashboard';
   if (permissions.viewDashboard) return '/dashboard';
-  if (user?.role === Role.EMPLOYEE && permissions.viewComplaints) return '/my-tickets';
+  if (user?.role === Role.USER && permissions.viewComplaints) return '/my-tickets';
   if (
     permissions.viewComplaints &&
     (permissions.viewAllComplaints || user?.role === Role.COORDINATOR || user?.role === Role.ADMIN)
@@ -104,8 +105,9 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [navExpanded, setNavExpanded] = useState(true);
   const queryClient = useQueryClient();
-  const { allowedAccess, selected, setAllowedAccess, setSelected, clearSelected, isSelectedValid, getAllPairs } = useLocationContext();
+  const { selected, allowedAccess, setAllowedAccess, setSelected, clearSelected, isSelectedValid, getAllPairs } = useLocationContext();
   const [orgDialogOpen, setOrgDialogOpen] = useState(false);
+  const [raiseOpen, setRaiseOpen] = useState(false);
 
   // When current user updates their profile (name, avatar, username), refresh header without reload
   useEffect(() => {
@@ -214,6 +216,12 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     };
   }, [pathname, validateAndGetUser]);
 
+  useEffect(() => {
+    const onOpenRaise = () => setRaiseOpen(true);
+    window.addEventListener("openRaiseTicket", onOpenRaise);
+    return () => window.removeEventListener("openRaiseTicket", onOpenRaise);
+  }, []);
+
   // Ensure we have a selected (company, location) context when needed.
   useEffect(() => {
     if (pathname === "/login") return;
@@ -245,7 +253,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
     }
   }, [pathname, user, allowedAccess, selected, isSelectedValid, setSelected, clearSelected, getAllPairs]);
 
-  if (loading || (permissionsLoading && pathname !== '/login')) {
+  if (loading || (permissionsLoading && !permissions && pathname !== '/login')) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -332,7 +340,7 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
         ) : (
           <div className="min-h-screen bg-background">
             <Header user={user} isNavExpanded={navExpanded} onNavExpandChange={setNavExpanded} />
-            <HorizontalNav isExpanded={navExpanded} />
+            <HorizontalNav isExpanded={navExpanded} user={user} />
             <main className={cn("flex flex-1 items-center justify-center p-6", isFixedLayout ? "min-h-0 overflow-y-auto" : "")}>
               <AccessDenied
                 actionLabel={`Go to ${ROUTE_LABELS[firstAllowed] ?? "Dashboard"}`}
@@ -371,12 +379,14 @@ export function AuthLayout({ children }: { children: React.ReactNode }) {
       ) : (
         <div className="flex h-screen flex-col overflow-hidden bg-background">
           <Header user={user} isNavExpanded={navExpanded} onNavExpandChange={setNavExpanded} />
-          <HorizontalNav isExpanded={navExpanded} />
+          <HorizontalNav isExpanded={navExpanded} user={user} />
           <main className="min-h-0 flex-1 overflow-y-auto">{children}</main>
         </div>
       )}
+      <RaiseTicketDialog open={raiseOpen} onClose={() => setRaiseOpen(false)} />
     </SoftwareProfileDraftProvider>
   );
 }
+
 
 

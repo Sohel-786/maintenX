@@ -309,46 +309,58 @@ export function TicketDetailDialog({
             </div>
           )}
 
-          <div className="rounded-xl border border-secondary-100 bg-white p-3.5 shadow-sm">
-            <div className="flex flex-wrap items-center gap-2">
-              {detail.status === ComplaintStatus.Assigned && isHandler && (
-                <Button size="sm" variant="secondary" className="px-5 font-bold" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Accepted })}>
-                  Accept
-                </Button>
-              )}
-            {detail.status === ComplaintStatus.Accepted && isHandler && (
-              <Button size="sm" variant="secondary" className="px-5 font-bold" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.InProgress })}>
-                Start work
-              </Button>
-            )}
-            {detail.status === ComplaintStatus.InProgress && isHandler && (
-              <Button
-                size="sm"
-                className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 font-bold"
-                disabled={statusMutation.isPending}
-                onClick={() => setCompletionDialogOpen(true)}
-              >
-                Mark done
-              </Button>
-            )}
-            {detail.status === ComplaintStatus.Done && permissions?.assignComplaints && (
-              <Button size="sm" variant="outline" className="px-6 font-bold" disabled={statusMutation.isPending} onClick={() => openConfirm("close")}>
-                Close ticket
-              </Button>
-            )}
-            {canReopen && (
-              <Button
-                size="sm"
-                variant="secondary"
-                className="px-6 font-bold"
-                disabled={reopenMutation.isPending}
-                onClick={() => openConfirm("reopen")}
-              >
-                Reopen for handler
-              </Button>
-            )}
-          </div>
-          </div>
+          {(() => {
+            const showAccept = detail.status === ComplaintStatus.Assigned && isHandler;
+            const showStartWork = detail.status === ComplaintStatus.Accepted && isHandler;
+            const showMarkDone = detail.status === ComplaintStatus.InProgress && isHandler;
+            const showClose = detail.status === ComplaintStatus.Done && !!permissions?.assignComplaints;
+            const showReopen = canReopen;
+
+            if (!showAccept && !showStartWork && !showMarkDone && !showClose && !showReopen) return null;
+
+            return (
+              <div className="rounded-xl border border-secondary-100 bg-white p-3.5 shadow-sm">
+                <div className="flex flex-wrap items-center gap-2">
+                  {showAccept && (
+                    <Button size="sm" variant="secondary" className="px-5 font-bold" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.Accepted })}>
+                      Accept
+                    </Button>
+                  )}
+                  {showStartWork && (
+                    <Button size="sm" variant="secondary" className="px-5 font-bold" onClick={() => statusMutation.mutate({ id: detail.id, status: ComplaintStatus.InProgress })}>
+                      Start work
+                    </Button>
+                  )}
+                  {showMarkDone && (
+                    <Button
+                      size="sm"
+                      className="bg-emerald-600 text-white hover:bg-emerald-700 px-6 font-bold"
+                      disabled={statusMutation.isPending}
+                      onClick={() => setCompletionDialogOpen(true)}
+                    >
+                      Mark done
+                    </Button>
+                  )}
+                  {showClose && (
+                    <Button size="sm" variant="outline" className="px-6 font-bold" disabled={statusMutation.isPending} onClick={() => openConfirm("close")}>
+                      Close ticket
+                    </Button>
+                  )}
+                  {showReopen && (
+                    <Button
+                      size="sm"
+                      variant="secondary"
+                      className="px-6 font-bold"
+                      disabled={reopenMutation.isPending}
+                      onClick={() => openConfirm("reopen")}
+                    >
+                      Reopen for handler
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
 
             <Dialog
               isOpen={confirmAction != null}

@@ -27,7 +27,7 @@ import {
   LogOut,
 } from "lucide-react";
 
-type Item = { href: string; label: string; icon: React.ComponentType<{ className?: string }>; badge?: number };
+type Item = { href?: string; onClick?: () => void; label: string; icon: React.ComponentType<{ className?: string }>; badge?: number };
 
 export function MxSidebar({
   role,
@@ -64,16 +64,20 @@ export function MxSidebar({
 
   const primaryItems: Item[] = [];
   if (permissions?.viewDashboard) primaryItems.push({ href: "/dashboard", label: "Dashboard", icon: LayoutDashboard });
-  if (role === Role.EMPLOYEE && permissions?.viewComplaints) {
+  if (role === Role.USER && permissions?.viewComplaints) {
     primaryItems.push({ href: "/my-tickets", label: "My tickets", icon: ClipboardList });
   }
-  if (role === Role.EMPLOYEE && permissions?.raiseComplaint) {
-    primaryItems.push({ href: "/dashboard?raise=1", label: "Raise ticket", icon: PlusCircle });
+  if (role === Role.USER && permissions?.raiseComplaint) {
+    primaryItems.push({ 
+      label: "Raise ticket", 
+      icon: PlusCircle,
+      onClick: () => window.dispatchEvent(new CustomEvent("openRaiseTicket"))
+    });
   }
   const canSeeAllTickets =
     !!permissions?.viewComplaints &&
     (permissions.viewAllComplaints || role === Role.COORDINATOR || role === Role.ADMIN) &&
-    role !== Role.EMPLOYEE;
+    role !== Role.USER;
   if (canSeeAllTickets) {
     primaryItems.push({ href: "/all-tickets", label: "All tickets", icon: List });
   }
@@ -113,20 +117,11 @@ export function MxSidebar({
   if (permissions?.accessSettings) admin.push({ href: "/settings", label: "Settings", icon: Settings });
 
   const renderItems = (items: Item[]) =>
-    items.map((item) => {
+    items.map((item, idx) => {
       const Icon = item.icon;
-      const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
-      return (
-        <Link 
-          key={item.href} 
-          href={item.href} 
-          className={cn(
-            "mx-nav-item flex items-center rounded-lg border border-transparent text-[14px] font-semibold transition-all duration-300 overflow-hidden group px-3 py-3",
-            active
-              ? "border-white/[0.08] bg-white/10 text-white shadow-sm"
-              : "text-[#b1c5e0] hover:bg-white/[0.06] hover:text-white"
-          )}
-        >
+      const active = item.href ? (pathname === item.href || pathname.startsWith(`${item.href}/`)) : false;
+      const content = (
+        <>
           <Icon className={cn(
             "h-5 w-5 shrink-0 transition-colors duration-200", 
             active ? "text-primary-400" : "group-hover:text-primary-300",
@@ -148,6 +143,27 @@ export function MxSidebar({
               {item.badge}
             </span>
           )}
+        </>
+      );
+
+      const commonClass = cn(
+        "mx-nav-item flex items-center rounded-lg border border-transparent text-[14px] font-semibold transition-all duration-300 overflow-hidden group px-3 py-3 w-full text-left",
+        active
+          ? "border-white/[0.08] bg-white/10 text-white shadow-sm"
+          : "text-[#b1c5e0] hover:bg-white/[0.06] hover:text-white"
+      );
+
+      if (item.onClick) {
+        return (
+          <button key={item.label + idx} onClick={item.onClick} className={commonClass}>
+            {content}
+          </button>
+        );
+      }
+
+      return (
+        <Link key={item.href || item.label + idx} href={item.href || "#"} className={commonClass}>
+          {content}
         </Link>
       );
     });
@@ -162,10 +178,10 @@ export function MxSidebar({
       onMouseLeave={() => setIsHovered(false)}
     >
       <div 
-        className="flex items-center shadow-lg h-14 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 relative overflow-hidden transition-all duration-300"
+        className="flex items-center shadow-lg h-20 bg-gradient-to-br from-primary-700 via-primary-600 to-primary-800 relative overflow-hidden transition-all duration-300"
       >
         {/* Fixed contents revealed by overflow-hidden parent */}
-        <div className="absolute top-0 right-0 -mr-10 -mt-10 h-20 w-20 rounded-full bg-white/5 blur-2xl pointer-events-none" />
+        <div className="absolute top-0 right-0 -mr-10 -mt-10 h-28 w-28 rounded-full bg-white/5 blur-2xl pointer-events-none" />
         
         <div className={cn(
           "flex items-center min-w-[280px] px-4",
@@ -198,8 +214,8 @@ export function MxSidebar({
       </div>
 
       <div
-        className="pb-8 overflow-y-auto overflow-x-hidden relative flex flex-col mt-2"
-        style={{ height: "calc(100vh - 56px)" }}
+        className="pb-0 overflow-y-auto overflow-x-hidden relative flex flex-col mt-2"
+        style={{ height: "calc(100vh - 80px)" }}
       >
         <div className="flex-1 px-2">
           <nav className="flex flex-col gap-1">{renderItems(primaryItems)}</nav>
@@ -231,16 +247,16 @@ export function MxSidebar({
 
         {/* Sidebar Logout Button */}
         {isVertical && (
-          <div className="mt-8 border-t border-white/[0.04] pt-4 pb-2 px-2">
+          <div className="mt-8 border-t border-white/[0.04] pt-4 pb-6 px-2">
             <button
               onClick={() => logoutMutation.mutate()}
               className={cn(
-                "mx-nav-item flex items-center rounded-lg border border-transparent text-[14px] font-semibold transition-all duration-300 overflow-hidden group w-full px-3 py-3 !text-rose-300 hover:!bg-rose-950/20 hover:!text-rose-200 hover:!border-rose-900/30"
+                "mx-nav-item flex items-center justify-center rounded-lg border border-transparent text-[14px] font-semibold transition-all duration-300 overflow-hidden group w-full px-3 py-3 !text-rose-300 hover:!bg-rose-500/20 hover:!text-rose-100"
               )}
             >
               <LogOut className={cn("h-5 w-5 shrink-0", !showFull && "mx-auto")} />
               <div className={cn(
-                "flex-1 ml-3 transition-all duration-300",
+                "ml-2 transition-all duration-300",
                 showFull ? "opacity-100 w-auto" : "opacity-0 w-0 pointer-events-none"
               )}>
                 <span className="whitespace-nowrap font-bold">Sign out</span>
@@ -252,3 +268,4 @@ export function MxSidebar({
     </aside>
   );
 }
+

@@ -17,6 +17,7 @@ import { TablePagination } from "@/components/ui/table-pagination";
 import { PAGINATION_VISIBLE_THRESHOLD } from "@/lib/pagination";
 import { Label } from "@/components/ui/label";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
+import { Switch } from "@/components/ui/switch";
 
 const filterLabelClass = "text-[11px] font-medium text-secondary-500 uppercase tracking-wider mb-1 block";
 
@@ -33,6 +34,7 @@ export default function DepartmentsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editItem, setEditItem] = useState<FacilityDepartment | null>(null);
   const [nameDraft, setNameDraft] = useState("");
+  const [isActiveDraft, setIsActiveDraft] = useState(true);
   const [searchInput, setSearchInput] = useState("");
   const search = useDebouncedValue(searchInput, 400);
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "inactive">("all");
@@ -72,7 +74,7 @@ export default function DepartmentsPage() {
   const totalCount = data?.total ?? 0;
 
   const createMut = useMutation({
-    mutationFn: (name: string) => api.post("/facility-departments", { name: name.trim() }),
+    mutationFn: (name: string) => api.post("/facility-departments", { name: name.trim(), isActive: isActiveDraft }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["facility-departments"] });
       toast.success("Department added");
@@ -84,8 +86,8 @@ export default function DepartmentsPage() {
   });
 
   const updateMut = useMutation({
-    mutationFn: ({ id, name }: { id: number; name: string }) =>
-      api.patch(`/facility-departments/${id}`, { name: name.trim() }),
+    mutationFn: ({ id, name, isActive }: { id: number; name: string; isActive: boolean }) =>
+      api.patch(`/facility-departments/${id}`, { name: name.trim(), isActive }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["facility-departments"] });
       toast.success("Department updated");
@@ -109,12 +111,14 @@ export default function DepartmentsPage() {
   const openAdd = () => {
     setEditItem(null);
     setNameDraft("");
+    setIsActiveDraft(true);
     setDialogOpen(true);
   };
 
   const openEdit = (d: FacilityDepartment) => {
     setEditItem(d);
     setNameDraft(d.name);
+    setIsActiveDraft(d.isActive);
     setDialogOpen(true);
   };
 
@@ -271,7 +275,7 @@ export default function DepartmentsPage() {
           onSubmit={(e) => {
             e.preventDefault();
             if (!nameDraft.trim() || createMut.isPending || updateMut.isPending) return;
-            if (editItem) updateMut.mutate({ id: editItem.id, name: nameDraft });
+            if (editItem) updateMut.mutate({ id: editItem.id, name: nameDraft, isActive: isActiveDraft });
             else createMut.mutate(nameDraft);
           }}
         >
@@ -288,6 +292,13 @@ export default function DepartmentsPage() {
             {!nameDraft.trim() && (
               <p className="mt-1 text-xs text-red-600 font-medium">Name is required</p>
             )}
+          </div>
+          <div className="flex items-center justify-between rounded-xl border border-secondary-200 bg-secondary-50/50 p-4 transition-colors hover:bg-secondary-50 dark:border-white/10 dark:bg-white/5">
+            <div className="space-y-0.5">
+              <Label className="text-sm font-bold text-secondary-900 dark:text-white">Active</Label>
+              <p className="text-xs text-muted-foreground">Inactive departments are hidden from new tickets.</p>
+            </div>
+            <Switch checked={isActiveDraft} onCheckedChange={setIsActiveDraft} />
           </div>
           <div className="flex gap-2 pt-2">
             <Button

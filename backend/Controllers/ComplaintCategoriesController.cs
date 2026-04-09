@@ -101,7 +101,7 @@ namespace net_backend.Controllers
                 CompanyId = companyId,
                 LocationId = locationId,
                 Name = name,
-                IsActive = true,
+                IsActive = request.IsActive ?? true,
                 CreatedAt = DateTime.Now,
                 UpdatedAt = DateTime.Now
             };
@@ -134,6 +134,25 @@ namespace net_backend.Controllers
                 if (await _context.ComplaintCategories.AnyAsync(c => c.CompanyId == companyId && c.Id != id && c.Name.ToLower() == name.ToLower()))
                     return Conflict(new ApiResponse<ComplaintCategoryDto> { Success = false, Message = "Another category with this name already exists." });
                 cat.Name = name;
+            }
+            if (request.IsActive.HasValue)
+            {
+                if (!request.IsActive.Value && cat.IsActive)
+                {
+                    var companyLocationIds = await _context.Locations
+                        .Where(l => l.CompanyId == companyId)
+                        .Select(l => l.Id)
+                        .ToListAsync();
+
+                    var hasActiveTickets = await _context.Complaints.AnyAsync(c =>
+                        companyLocationIds.Contains(c.LocationId) &&
+                        c.CategoryId == id &&
+                        c.Status != ComplaintStatus.Done);
+
+                    if (hasActiveTickets)
+                        return BadRequest(new ApiResponse<ComplaintCategoryDto> { Success = false, Message = "Cannot deactivate: this category is used by active tickets." });
+                }
+                cat.IsActive = request.IsActive.Value;
             }
             cat.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();
