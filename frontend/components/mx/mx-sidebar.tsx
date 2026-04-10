@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { Role } from "@/types";
 import type { UserPermission } from "@/types";
@@ -36,6 +36,8 @@ export function MxSidebar({
   pendingCloseCount,
   expanded,
   onExpandChange,
+  onCloseMobile,
+  isMobileDrawer = false,
 }: {
   role: Role;
   permissions: UserPermission | null | undefined;
@@ -43,6 +45,8 @@ export function MxSidebar({
   pendingCloseCount?: number;
   expanded: boolean;
   onExpandChange: (expanded: boolean) => void;
+  onCloseMobile: () => void;
+  isMobileDrawer?: boolean;
 }) {
   const pathname = usePathname();
   const [isHovered, setIsHovered] = useState(false);
@@ -59,7 +63,8 @@ export function MxSidebar({
 
   const COLLAPSED_WIDTH = 64;
   const EXPANDED_WIDTH = 280;
-  const showFull = expanded || isHovered;
+
+  const showFull = isMobileDrawer || expanded || isHovered;
   const width = showFull ? EXPANDED_WIDTH : COLLAPSED_WIDTH;
 
   const primaryItems: Item[] = [];
@@ -155,14 +160,26 @@ export function MxSidebar({
 
       if (item.onClick) {
         return (
-          <button key={item.label + idx} onClick={item.onClick} className={commonClass}>
+          <button
+            key={item.label + idx}
+            onClick={(e) => {
+              item.onClick?.();
+              onCloseMobile();
+            }}
+            className={commonClass}
+          >
             {content}
           </button>
         );
       }
 
       return (
-        <Link key={item.href || item.label + idx} href={item.href || "#"} className={commonClass}>
+        <Link
+          key={item.href || item.label + idx}
+          href={item.href || "#"}
+          onClick={onCloseMobile}
+          className={commonClass}
+        >
           {content}
         </Link>
       );
@@ -172,7 +189,7 @@ export function MxSidebar({
 
   return (
     <aside
-      className="mx-sidebar fixed left-0 top-0 z-50 h-screen border-r border-white/[0.06] shadow-2xl transition-[width] duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden"
+      className="mx-sidebar h-screen border-r border-white/[0.06] shadow-2xl transition-[width] duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden relative shrink-0"
       style={{ background: "var(--mx-navy-800)", width }}
       onMouseEnter={() => !expanded && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
@@ -185,7 +202,7 @@ export function MxSidebar({
         
         <div className={cn(
           "flex items-center min-w-[280px] px-4",
-          !showFull && "justify-center"
+          !showFull ? "justify-center" : "justify-between"
         )}>
           <div className={cn(
             "flex-1 flex flex-col min-w-0 transition-opacity duration-200 delay-75",
@@ -199,17 +216,19 @@ export function MxSidebar({
             </div>
           </div>
           
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onExpandChange(!expanded);
-            }}
-            className="rounded-md border border-white/20 bg-white/10 p-2 text-white shadow-sm transition-all hover:bg-white/20 shrink-0"
-            title={expanded ? "Unpin sidebar" : "Pin sidebar"}
-          >
-            {expanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onExpandChange(!expanded);
+              }}
+              className="rounded-md border border-white/20 bg-white/10 p-2 text-white shadow-sm transition-all hover:bg-white/20 shrink-0"
+              title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+            >
+              {expanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
       </div>
 

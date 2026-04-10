@@ -247,7 +247,7 @@ export function Dialog({
     "3xl": "max-w-7xl",
     "4xl": "max-w-[1500px]",
     "5xl": "max-w-[1750px]",
-    full: "w-[96vw] h-[94vh] max-w-none max-h-[94vh]",
+    full: "w-[98vw] h-[96vh] max-w-none max-h-[96vh]",
   };
 
   const dialogContent = (
@@ -258,12 +258,13 @@ export function Dialog({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
             onClick={(e) => {
               e.stopPropagation();
               if (closeOnBackdropClick) onClose();
             }}
             className={cn(
-              "fixed inset-0 bg-black/50 backdrop-blur-sm z-[1000] flex items-center justify-center p-4",
+              "fixed inset-0 bg-black/60 backdrop-blur-md z-[1000] flex items-center justify-center p-2 sm:p-4 transition-all",
               overlayClassName,
             )}
           >
@@ -272,20 +273,19 @@ export function Dialog({
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
               onClick={(e) => e.stopPropagation()}
-              role="dialog"
-              aria-modal="true"
-              aria-labelledby="dialog-title"
               className={cn(
-                "bg-white dark:bg-[#0d1117] text-card-foreground rounded-xl shadow-2xl w-full max-h-[96vh] flex flex-col relative focus:outline-none overflow-hidden border border-secondary-200 dark:border-border",
+                "bg-white dark:bg-[#0d1117] text-card-foreground rounded-2xl shadow-2xl w-full max-h-[98vh] flex flex-col relative focus:outline-none overflow-hidden border border-secondary-200 dark:border-border",
+                size !== "full" && "mx-auto",
                 sizeClasses[size],
                 className
               )}
             >
               {/* Header */}
               {!hideHeader && (
-                <div className="flex items-center justify-between p-6 border-b border-border">
-                  <h2 id="dialog-title" className="text-xl font-semibold text-foreground">{title}</h2>
+                <div className="flex items-center justify-between px-4 py-4 sm:px-6 sm:py-5 border-b border-border bg-gray-50/50 dark:bg-gray-900/20">
+                  <h2 id="dialog-title" className="text-lg sm:text-xl font-bold tracking-tight text-foreground">{title}</h2>
                   {!hideCloseButton && (
                     <Button
                       type="button"
@@ -297,10 +297,10 @@ export function Dialog({
                         onClose();
                       }}
                       disabled={closeButtonDisabled}
-                      className="h-8 w-8 p-0"
+                      className="h-9 w-9 p-0 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
                       title={closeButtonDisabled ? "Please wait" : "Close"}
                     >
-                      <X className="h-4 w-4" />
+                      <X className="h-5 w-5" />
                     </Button>
                   )}
                 </div>
@@ -321,7 +321,7 @@ export function Dialog({
                 className={cn(
                   "flex-1 min-h-0",
                   contentScroll
-                    ? "overflow-y-auto p-6"
+                    ? "overflow-y-auto p-4 sm:p-6"
                     : "overflow-hidden flex flex-col"
                 )}
               >

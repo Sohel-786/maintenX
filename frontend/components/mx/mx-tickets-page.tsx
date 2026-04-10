@@ -193,8 +193,8 @@ export function MxTicketsPage({
       </div>
 
       <Card className="mb-6 border-secondary-200 bg-white shadow-sm">
-        <div className="flex flex-col flex-wrap gap-4 p-4 lg:flex-row lg:items-end">
-          <div className="min-w-0 flex-1 flex-col">
+        <div className="flex flex-row flex-wrap items-end gap-3 lg:gap-4 p-4">
+          <div className="w-full sm:flex-1 min-w-0 flex flex-col">
             <label className={filterLabelClass}>Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
@@ -206,7 +206,7 @@ export function MxTicketsPage({
               />
             </div>
           </div>
-          <div className="w-full flex-col sm:w-44">
+          <div className="flex-[2] min-w-[120px] sm:flex-none sm:w-44 flex flex-col">
             <label className={filterLabelClass}>Category</label>
             <select
               className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
@@ -222,7 +222,7 @@ export function MxTicketsPage({
             </select>
           </div>
           {!lockStatus && (
-            <div className="w-full flex-col sm:w-44">
+            <div className="flex-[2] min-w-[120px] sm:flex-none sm:w-44 flex flex-col">
               <label className={filterLabelClass}>Status</label>
               <select
                 className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
@@ -239,26 +239,28 @@ export function MxTicketsPage({
               </select>
             </div>
           )}
-          <div className="w-20 max-w-[5.5rem] shrink-0">
+          <div className="flex-1 min-w-[80px] sm:flex-none sm:w-20 shrink-0 flex flex-col">
             <label className={filterLabelClass}>Rows</label>
             <PageSizeSelect value={pageSize} onChange={(v) => { setPageSize(v); setPage(1); }} />
           </div>
           {hasActiveFilters && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10"
-              onClick={() => {
-                setSearchInput("");
-                setCategoryId("");
-                if (!lockStatus) setLocalStatus("");
-                setPage(1);
-              }}
-            >
-              <X className="mr-1.5 h-3.5 w-3.5" />
-              Clear
-            </Button>
+            <div className="w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full sm:w-auto"
+                onClick={() => {
+                  setSearchInput("");
+                  setCategoryId("");
+                  if (!lockStatus) setLocalStatus("");
+                  setPage(1);
+                }}
+              >
+                <X className="mr-1.5 h-3.5 w-3.5" />
+                Clear
+              </Button>
+            </div>
           )}
         </div>
       </Card>

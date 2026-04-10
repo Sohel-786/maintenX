@@ -191,7 +191,7 @@ export default function AssignWorkPage() {
               <th className="px-4 py-3 font-semibold">Dept</th>
               <th className="px-4 py-3 font-semibold">Status</th>
               <th className="px-4 py-3 font-semibold">Handler</th>
-              {showAssign && <th className="min-w-[200px] px-4 py-3 font-semibold">Assign / reassign</th>}
+              {showAssign && <th className="min-w-[280px] px-4 py-3 font-semibold">Assign / reassign</th>}
               <th className="px-4 py-3 font-semibold">Updated</th>
               <th className="w-14 px-4 py-3 text-center font-semibold">View</th>
             </tr>
@@ -247,8 +247,8 @@ export default function AssignWorkPage() {
                             : handlerOptions.filter((o) => Number(o.value) !== currentAssignedId);
                         const pickerDisabled = optionsForRow.length === 0;
                         return (
-                      <div className="flex flex-wrap items-center gap-2">
-                        <div className="w-[200px]">
+                      <div className="flex items-center gap-2 max-w-[260px]">
+                        <div className="flex-1 min-w-0">
                           <SearchableSelect
                             options={optionsForRow}
                             value={handlerPick[r.id] ?? ""}
@@ -263,7 +263,7 @@ export default function AssignWorkPage() {
                         </div>
                         <Button
                           size="sm"
-                          className="h-9 text-xs"
+                          className="h-9 shrink-0 text-xs font-bold"
                           disabled={pickerDisabled || !handlerPick[r.id] || assignMutation.isPending}
                           onClick={() => {
                             const hid = Number(handlerPick[r.id]);
@@ -351,8 +351,8 @@ export default function AssignWorkPage() {
       </div>
 
       <Card className="mb-6 border-secondary-200 bg-white shadow-sm">
-        <div className="flex flex-col flex-wrap gap-4 p-4 lg:flex-row lg:items-end">
-          <div className="min-w-0 flex-1 flex-col">
+        <div className="flex flex-row flex-wrap items-end gap-3 lg:gap-4 p-4">
+          <div className="w-full sm:flex-1 min-w-0 flex flex-col">
             <label className={filterLabelClass}>Search</label>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
@@ -368,7 +368,7 @@ export default function AssignWorkPage() {
               />
             </div>
           </div>
-          <div className="w-full flex-col sm:w-44">
+          <div className="flex-[2] min-w-[120px] sm:flex-none sm:w-44 flex flex-col">
             <label className={filterLabelClass}>Category</label>
             <select
               className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
@@ -395,7 +395,7 @@ export default function AssignWorkPage() {
               ))}
             </select>
           </div>
-          <div className="w-20 max-w-[5.5rem] shrink-0">
+          <div className="flex-1 min-w-[80px] sm:flex-none sm:w-20 shrink-0 flex flex-col">
             <label className={filterLabelClass}>Rows</label>
             <PageSizeSelect
               value={activeTab === "unassigned" ? pageSizeUn : pageSizeActive}
@@ -411,26 +411,28 @@ export default function AssignWorkPage() {
             />
           </div>
           {(activeTab === "unassigned" ? hasUnFilters : hasActiveFilters) && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-10"
-              onClick={() => {
-                if (activeTab === "unassigned") {
-                  setSearchInputUn("");
-                  setCategoryIdUn("");
-                  setPageUn(1);
-                } else {
-                  setSearchInputActive("");
-                  setCategoryIdActive("");
-                  setPageActive(1);
-                }
-              }}
-            >
-              <X className="mr-1.5 h-3.5 w-3.5" />
-              Clear
-            </Button>
+            <div className="w-full sm:w-auto">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-10 w-full sm:w-auto"
+                onClick={() => {
+                  if (activeTab === "unassigned") {
+                    setSearchInputUn("");
+                    setCategoryIdUn("");
+                    setPageUn(1);
+                  } else {
+                    setSearchInputActive("");
+                    setCategoryIdActive("");
+                    setPageActive(1);
+                  }
+                }}
+              >
+                <X className="mr-1.5 h-3.5 w-3.5" />
+                Clear
+              </Button>
+            </div>
           )}
         </div>
       </Card>

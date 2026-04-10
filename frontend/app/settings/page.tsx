@@ -57,6 +57,7 @@ import { applyPrimaryColor } from "@/lib/theme";
 import { useSoftwareProfileDraft } from "@/contexts/software-profile-draft-context";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/utils";
+import { Switch } from "@/components/ui/switch";
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 /** Stable empty array for location access so useEffect dependency does not change every render when query is disabled. */
@@ -540,36 +541,37 @@ export default function SettingsPage() {
     }
   };
 
-  const filteredUsers =
-    users?.filter(
-      (u) =>
-        u.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.username.toLowerCase().includes(searchTerm.toLowerCase()),
-    ) || [];
+  const filteredUsers = (users || []).filter((u) => {
+    const term = searchTerm.toLowerCase();
+    return (
+      u.firstName.toLowerCase().includes(term) ||
+      u.lastName.toLowerCase().includes(term) ||
+      u.username.toLowerCase().includes(term)
+    );
+  });
 
   return (
-    <div className="p-6 max-w-7xl mx-auto min-h-[calc(100vh-4rem)]">
+    <div className="w-full px-4 sm:px-8 lg:px-12 py-6 min-h-[calc(100vh-4rem)]">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
+        className="w-full space-y-6"
       >
         {/* Header with section tabs */}
         <div className="border-b border-border pb-6 mb-2">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-primary-100 rounded-xl shrink-0">
-                <Settings className="w-8 h-8 text-primary-600" />
+                <Settings className="w-6 h-6 sm:w-8 sm:h-8 text-primary-600" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Settings</h1>
-                <p className="text-muted-foreground mt-0.5">
+                <h1 className="text-2xl sm:text-3xl font-bold text-foreground">Settings</h1>
+                <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
                   Software profile, access control, and user management
                 </p>
               </div>
             </div>
-            <nav className="flex gap-1 p-1 bg-muted rounded-lg w-fit flex-nowrap overflow-x-auto border border-border">
+            <nav className="flex gap-1 p-1 bg-muted rounded-lg w-full sm:w-fit flex-nowrap overflow-x-auto border border-border scrollbar-hide">
               {tabs.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -578,7 +580,7 @@ export default function SettingsPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold transition-all whitespace-nowrap ${isActive
+                    className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap flex-1 sm:flex-initial ${isActive
                       ? "bg-card text-primary-600 shadow-sm ring-1 ring-border"
                       : "text-muted-foreground hover:text-primary-600 hover:bg-card/60"
                       }`}
@@ -600,22 +602,22 @@ export default function SettingsPage() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="space-y-6"
+                className="w-full space-y-6"
               >
                 <Card>
                   <CardHeader className="border-b border-border">
-                    <CardTitle className="text-xl text-foreground">
+                    <CardTitle className="text-lg sm:text-xl text-foreground">
                       Software Profile
                     </CardTitle>
-                    <p className="text-sm text-muted-foreground font-normal mt-1">
+                    <p className="text-xs sm:text-sm text-muted-foreground font-normal mt-1">
                       Basic branding and software naming
                     </p>
                   </CardHeader>
                   <CardContent className="pt-6 space-y-6">
                     <div className="space-y-6">
-                      <div className="grid grid-cols-1 gap-8">
+                      <div className="grid grid-cols-1 gap-6 sm:gap-8">
                         <div className="space-y-2">
-                          <Label htmlFor="softwareName" className="text-[11px] font-black uppercase tracking-wider text-muted-foreground ml-1">
+                          <Label htmlFor="softwareName" className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider text-muted-foreground ml-1">
                             Software Designation
                           </Label>
                           <Input
@@ -623,9 +625,9 @@ export default function SettingsPage() {
                             value={softwareName}
                             onChange={(e) => setSoftwareName(e.target.value)}
                             placeholder="e.g. MaintenX – Facility Maintenance Portal"
-                            className="h-12 px-4 rounded-xl border-border focus:ring-2 focus:ring-ring/30 transition-all font-medium"
+                            className="h-11 sm:h-12 px-4 rounded-xl border-border focus:ring-2 focus:ring-ring/30 transition-all font-medium"
                           />
-                          <p className="text-[10px] text-muted-foreground font-bold uppercase tracking-tight ml-1">The name displayed in browser tabs and UI headers.</p>
+                          <p className="text-[9px] sm:text-[10px] text-muted-foreground font-bold uppercase tracking-tight ml-1">The name displayed in browser tabs and UI headers.</p>
                         </div>
                       </div>
                     </div>
@@ -772,7 +774,7 @@ export default function SettingsPage() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="space-y-6"
+                className="w-full space-y-6"
               >
                 <Card>
                   <CardHeader className="border-b border-secondary-100">
@@ -936,9 +938,9 @@ export default function SettingsPage() {
                                 <div className="p-2 bg-emerald-100/50 dark:bg-emerald-900/20 rounded-xl text-emerald-600 dark:text-emerald-400">
                                   <Building2 className="w-5 h-5" />
                                 </div>
-                                <div>
+                                <div className="min-w-0">
                                   <CardTitle className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Company & Location Access</CardTitle>
-                                  <p className="text-[10px] text-slate-500 dark:text-white/60 font-black uppercase tracking-widest mt-0.5">Assign companies and locations this user can access. Admin role still sees all.</p>
+                                  <p className="text-[10px] text-slate-500 dark:text-white/60 font-black uppercase tracking-widest mt-0.5">Assign companies and locations this user can access.</p>
                                 </div>
                               </div>
                             </CardHeader>
@@ -947,13 +949,13 @@ export default function SettingsPage() {
                                 {localLocationAccess.map((a) => (
                                   <span
                                     key={`${a.companyId}-${a.locationId}`}
-                                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 text-emerald-800 px-3 py-1.5 text-sm font-medium"
+                                    className="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 dark:bg-emerald-900/40 text-emerald-800 dark:text-emerald-100 px-3 py-1.5 text-xs sm:text-sm font-medium border border-emerald-200 dark:border-emerald-800"
                                   >
-                                    {a.companyName} – {a.locationName}
+                                    <span className="truncate max-w-[150px]">{a.companyName} – {a.locationName}</span>
                                     <button
                                       type="button"
                                       onClick={() => setLocalLocationAccess((prev) => prev.filter((x) => !(x.companyId === a.companyId && x.locationId === a.locationId)))}
-                                      className="rounded-full p-0.5 hover:bg-emerald-200/80 transition-colors"
+                                      className="rounded-full p-0.5 hover:bg-emerald-200/80 dark:hover:bg-emerald-800 transition-colors"
                                       aria-label="Remove"
                                     >
                                       <X className="w-3.5 h-3.5" />
@@ -961,35 +963,35 @@ export default function SettingsPage() {
                                   </span>
                                 ))}
                                 {localLocationAccess.length === 0 && (
-                                  <span className="text-sm text-secondary-500 italic">No company or location assigned yet.</span>
+                                  <span className="text-sm text-secondary-500 italic">No access assigned.</span>
                                 )}
                               </div>
-                              <div className="flex flex-wrap items-end gap-2 pt-2 border-t border-secondary-100">
-                                <div className="min-w-[140px]">
-                                  <Label className="text-xs">Company</Label>
+                              <div className="flex flex-col sm:flex-row items-stretch sm:items-end gap-3 pt-4 border-t border-secondary-100">
+                                <div className="flex-1">
+                                  <Label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-1 block">Company</Label>
                                   <select
                                     value={locationAccessAddCompanyId}
                                     onChange={(e) => {
                                       setLocationAccessAddCompanyId(e.target.value ? Number(e.target.value) : "");
                                       setLocationAccessAddLocationId("");
                                     }}
-                                    className="mt-1 w-full rounded-md border border-secondary-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                                    className="w-full h-10 rounded-lg border border-secondary-300 dark:border-border px-3 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white dark:bg-card"
                                   >
-                                    <option value="">Select</option>
+                                    <option value="">Select Company</option>
                                     {companies?.map((c) => (
                                       <option key={c.id} value={c.id}>{c.name}</option>
                                     ))}
                                   </select>
                                 </div>
-                                <div className="min-w-[140px]">
-                                  <Label className="text-xs">Location</Label>
+                                <div className="flex-1">
+                                  <Label className="text-[10px] font-bold uppercase tracking-wide text-slate-500 mb-1 block">Location</Label>
                                   <select
                                     value={locationAccessAddLocationId}
                                     onChange={(e) => setLocationAccessAddLocationId(e.target.value ? Number(e.target.value) : "")}
-                                    className="mt-1 w-full rounded-md border border-secondary-300 px-2 py-1.5 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500"
+                                    className="w-full h-10 rounded-lg border border-secondary-300 dark:border-border px-3 text-sm focus:border-primary-500 focus:ring-1 focus:ring-primary-500 bg-white dark:bg-card"
                                     disabled={!locationAccessAddCompanyId}
                                   >
-                                    <option value="">Select</option>
+                                    <option value="">Select Site</option>
                                     {locations
                                       ?.filter((l) => l.companyId === Number(locationAccessAddCompanyId))
                                       .map((l) => (
@@ -999,7 +1001,6 @@ export default function SettingsPage() {
                                 </div>
                                 <Button
                                   type="button"
-                                  size="sm"
                                   onClick={() => {
                                     const cid = locationAccessAddCompanyId === "" ? null : Number(locationAccessAddCompanyId);
                                     const lid = locationAccessAddLocationId === "" ? null : Number(locationAccessAddLocationId);
@@ -1013,17 +1014,18 @@ export default function SettingsPage() {
                                     setLocationAccessAddLocationId("");
                                   }}
                                   disabled={!locationAccessAddCompanyId || !locationAccessAddLocationId}
+                                  className="h-10 px-6 font-bold"
                                 >
                                   Add
                                 </Button>
                               </div>
                             </CardContent>
                           </Card>
-                          <div className="flex justify-end gap-2 pt-6 border-t border-secondary-100">
-                            <Button type="button" variant="outline" onClick={revertPermissions} disabled={!hasUnsavedAccessChanges || updateUserPermissionsMutation.isPending || updateLocationAccess.isPending} className="gap-2">
+                          <div className="flex flex-col sm:flex-row justify-end gap-3 pt-6 border-t border-secondary-100">
+                            <Button type="button" variant="outline" onClick={revertPermissions} disabled={!hasUnsavedAccessChanges || updateUserPermissionsMutation.isPending || updateLocationAccess.isPending} className="gap-2 h-11 sm:h-auto font-bold">
                               <X className="w-4 h-4" /> Cancel
                             </Button>
-                            <Button onClick={handleSavePermissions} disabled={updateUserPermissionsMutation.isPending || updateLocationAccess.isPending || !hasUnsavedAccessChanges} className="gap-2">
+                            <Button onClick={handleSavePermissions} disabled={updateUserPermissionsMutation.isPending || updateLocationAccess.isPending || !hasUnsavedAccessChanges} className="gap-2 h-11 sm:h-auto font-bold shadow-lg shadow-primary-100">
                               {(updateUserPermissionsMutation.isPending || updateLocationAccess.isPending) ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                               Save Permissions
                             </Button>
@@ -1049,148 +1051,235 @@ export default function SettingsPage() {
                 initial={{ opacity: 0, x: 10 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -10 }}
-                className="space-y-6"
+                className="w-full space-y-6"
               >
-                <Card>
-                  <CardHeader className="border-b border-secondary-100 flex flex-row items-center justify-between space-y-0">
+                <Card className="border-secondary-200 dark:border-border overflow-hidden shadow-sm">
+                  <CardHeader className="border-b border-secondary-100 dark:border-border bg-gray-50/30 dark:bg-gray-900/10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 sm:p-6">
                     <div>
-                      <CardTitle className="text-xl">User Management</CardTitle>
-                      <p className="text-sm text-secondary-600 font-normal mt-1">
-                        Create, update, and activate or deactivate user accounts
+                      <CardTitle className="text-xl font-bold tracking-tight">User Management</CardTitle>
+                      <p className="text-sm text-secondary-600 dark:text-white/60 font-normal mt-1 leading-relaxed">
+                        Control access for team members and external stakeholders.
                       </p>
                     </div>
                     <Button
                       onClick={() => handleOpenUserForm()}
-                      className="gap-2 shrink-0"
+                      className="gap-2 shrink-0 w-full sm:w-auto font-bold h-11"
                     >
                       <Plus className="w-4 h-4" />
-                      Add user
+                      Add New User
                     </Button>
                   </CardHeader>
-                  <CardContent className="pt-6">
-                    <div className="relative mb-4">
+                  <CardContent className="p-4 sm:p-6 space-y-6">
+                    <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-secondary-400" />
                       <Input
-                        placeholder="Search by name or username..."
+                        placeholder="Search by name, username or role..."
                         value={searchInput}
                         onChange={(e) => setSearchInput(e.target.value)}
-                        className="pl-10"
+                        className="pl-10 h-12 bg-secondary-50/50 border-secondary-200 dark:bg-card dark:border-border rounded-xl focus:ring-2"
                       />
                     </div>
-                    <div className="border border-secondary-200 rounded-lg overflow-hidden">
-                      <table className="w-full">
-                        <thead className="bg-primary-100 dark:bg-primary-900/40 border-b border-primary-200 dark:border-primary-800">
-                          <tr className="text-primary-900 dark:text-primary-200">
-                            <th className="text-left py-3 px-4 font-semibold text-sm border-r border-primary-200/50 dark:border-primary-800/50">
-                              Name
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-sm">
-                              Username
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-sm">
-                              Mobile No.
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-sm">
-                              Role
-                            </th>
-                            <th className="text-left py-3 px-4 font-semibold text-sm">
-                              Status
-                            </th>
-                            <th className="text-right py-3 px-4 font-semibold text-sm">
-                              Actions
-                            </th>
-                          </tr>
-                        </thead>
-                        <tbody>
+
+                    {/* Desktop View: Table (lg and above) */}
+                    <div className="hidden lg:block border border-secondary-200 dark:border-border rounded-xl overflow-hidden bg-white dark:bg-card">
+                      <div className="table-container overflow-x-auto scrollbar-thin">
+                        <table className="w-full text-left">
+                          <thead className="bg-secondary-50/80 dark:bg-primary-950/40 border-b border-secondary-200 dark:border-border">
+                            <tr className="text-secondary-900 dark:text-primary-100">
+                              <th className="py-4 px-6 font-bold text-[11px] uppercase tracking-widest border-r border-secondary-200/30 dark:border-border/50">
+                                Identity
+                              </th>
+                              <th className="py-4 px-6 font-bold text-[11px] uppercase tracking-widest">
+                                Credentials
+                              </th>
+                              <th className="py-4 px-6 font-bold text-[11px] uppercase tracking-widest">
+                                Contact
+                              </th>
+                              <th className="py-4 px-6 font-bold text-[11px] uppercase tracking-widest">
+                                Role
+                              </th>
+                              <th className="py-4 px-6 font-bold text-[11px] uppercase tracking-widest text-center">
+                                Status
+                              </th>
+                              <th className="py-4 px-6 font-bold text-[11px] uppercase tracking-widest text-right">
+                                Actions
+                              </th>
+                            </tr>
+                          </thead>
+                        <tbody className="divide-y divide-secondary-100 dark:divide-border">
                           {filteredUsers.map((u) => (
                             <tr
                               key={u.id}
-                              className="border-b border-secondary-100 hover:bg-secondary-50/50"
+                              className="group hover:bg-secondary-50/50 dark:hover:bg-primary-900/10 transition-colors"
                             >
-                              <td className="py-3 px-4">
-                                {u.firstName} {u.lastName}
-                                {currentUser && u.id === currentUser.id && (
-                                  <span className="ml-2 text-xs text-blue-600">
-                                    (You)
-                                  </span>
-                                )}
+                              <td className="py-4 px-6">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-9 h-9 rounded-full bg-primary-50 dark:bg-primary-900/30 flex items-center justify-center text-primary-700 dark:text-primary-400 font-black text-xs border border-primary-100 dark:border-primary-800">
+                                    {u.firstName[0]}{u.lastName[0]}
+                                  </div>
+                                  <div>
+                                    <p className="font-bold text-secondary-900 dark:text-white">
+                                      {u.firstName} {u.lastName}
+                                    </p>
+                                    {currentUser && u.id === currentUser.id && (
+                                      <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-tight">
+                                        Active Account (You)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
                               </td>
-                              <td className="py-3 px-4 font-mono text-sm">
-                                {u.username}
-                              </td>
-                              <td className="py-3 px-4 text-sm text-secondary-600">
-                                {u.mobileNumber || "—"}
-                              </td>
-                              <td className="py-3 px-4">
-                                <span
-                                  className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${u.role === Role.ADMIN
-                                    ? "bg-amber-100 text-amber-800"
-                                    : u.role === Role.COORDINATOR
-                                      ? "bg-purple-100 text-purple-700"
-                                      : u.role === Role.HANDLER
-                                        ? "bg-teal-100 text-teal-800"
-                                        : "bg-blue-100 text-blue-700"
-                                    }`}
-                                >
-                                  {u.role === Role.ADMIN
-                                    ? "Admin"
-                                    : u.role === Role.COORDINATOR
-                                      ? "Coordinator"
-                                      : u.role === Role.HANDLER
-                                        ? "Handler"
-                                        : "User"}
+                              <td className="py-4 px-6">
+                                <span className="font-mono text-sm px-2 py-1 bg-secondary-100/50 dark:bg-secondary-900/40 rounded text-secondary-700 dark:text-white/70 border border-secondary-200/50 dark:border-border/50">
+                                  @{u.username}
                                 </span>
                               </td>
-                              <td className="py-3 px-4">
-                                {currentUser && u.id === currentUser.id ? (
-                                  <span className="inline-flex px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">
-                                    Active (You)
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() =>
-                                      updateUser.mutate({
-                                        id: u.id,
-                                        data: { isActive: !u.isActive },
-                                      })
-                                    }
-                                    disabled={updateUser.isPending}
-                                    className={`inline-flex px-2 py-0.5 rounded text-xs font-medium transition-colors ${u.isActive
-                                      ? "bg-green-100 text-green-700 hover:bg-green-200"
-                                      : "bg-red-100 text-red-700 hover:bg-red-200"
-                                      }`}
-                                  >
-                                    {u.isActive ? "Active" : "Inactive"} — click
-                                    to toggle
-                                  </button>
-                                )}
+                              <td className="py-4 px-6 text-sm font-medium text-secondary-600 dark:text-white/80">
+                                {u.mobileNumber || "—"}
                               </td>
-                              <td className="py-3 px-4 text-right">
-                                <div className="flex justify-end gap-1">
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => handleOpenUserForm(u)}
-                                    className="hover:bg-primary-50 dark:hover:bg-primary-900/20 dark:hover:text-black"
-                                    title="Edit Profile"
-                                  >
-                                    <Edit2 className="w-4 h-4" />
-                                  </Button>
+                              <td className="py-4 px-6">
+                                <span
+                                  className={cn(
+                                    "inline-flex px-2.5 py-1 rounded text-[10px] font-black uppercase tracking-wider",
+                                    u.role === Role.ADMIN
+                                      ? "bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400"
+                                      : u.role === Role.COORDINATOR
+                                        ? "bg-purple-100 text-purple-800 dark:bg-purple-900/30 dark:text-purple-400"
+                                        : u.role === Role.HANDLER
+                                          ? "bg-teal-100 text-teal-800 dark:bg-teal-900/30 dark:text-teal-400"
+                                          : "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400"
+                                  )}
+                                >
+                                  {u.role}
+                                </span>
+                              </td>
+                              <td className="py-4 px-6 text-center">
+                                <div className="flex justify-center">
+                                  {currentUser && u.id === currentUser.id ? (
+                                    <div className="w-11 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                      <div className="w-4 h-4 rounded-full bg-primary animate-pulse" />
+                                    </div>
+                                  ) : (
+                                    <Switch
+                                      checked={u.isActive}
+                                      onCheckedChange={() =>
+                                        updateUser.mutate({
+                                          id: u.id,
+                                          data: { isActive: !u.isActive },
+                                        })
+                                      }
+                                      disabled={updateUser.isPending}
+                                    />
+                                  )}
                                 </div>
+                              </td>
+                              <td className="py-4 px-6 text-right">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleOpenUserForm(u)}
+                                  className="h-9 w-9 p-0 rounded-lg hover:bg-primary hover:text-white dark:hover:bg-primary transition-all"
+                                  title="Edit User Settings"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </Button>
                               </td>
                             </tr>
                           ))}
                         </tbody>
-                      </table>
-                      {filteredUsers.length === 0 && (
-                        <div className="text-center py-12 text-secondary-500">
-                          {searchTerm
-                            ? "No users match your search."
-                            : "No users yet. Add your first user."}
-                        </div>
-                      )}
+                        </table>
+                      </div>
                     </div>
+
+                    {/* Mobile/Tablet View: Cards (Below lg) */}
+                    <div className="lg:hidden grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredUsers.map((u) => (
+                        <motion.div
+                          key={u.id}
+                          initial={{ opacity: 0, scale: 0.98 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          className="bg-white dark:bg-secondary-900/20 border border-secondary-200 dark:border-border rounded-2xl p-5 shadow-sm hover:shadow-md transition-all space-y-4"
+                        >
+                          <div className="flex items-start justify-between">
+                            <div className="flex gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-primary-100 dark:bg-primary-900/40 flex items-center justify-center text-primary-700 dark:text-primary-400 font-black text-sm shrink-0 border border-primary-200 dark:border-primary-800">
+                                {u.firstName[0]}{u.lastName[0]}
+                              </div>
+                              <div className="min-w-0">
+                                <h4 className="font-bold text-secondary-900 dark:text-white truncate text-base">
+                                  {u.firstName} {u.lastName}
+                                </h4>
+                                <div className="flex items-center gap-2 mt-0.5">
+                                  <p className="text-xs text-secondary-500 dark:text-white/60 font-mono">@{u.username}</p>
+                                  {currentUser && u.id === currentUser.id && (
+                                    <span className="text-[9px] font-black uppercase bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded border border-blue-100 dark:bg-blue-900/20 dark:border-blue-800">You</span>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleOpenUserForm(u)}
+                              className="h-9 w-9 p-0 border-secondary-200 dark:border-border rounded-xl hover:bg-primary hover:text-white transition-all shadow-sm"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 pt-4 border-t border-secondary-100/50 dark:border-border/50">
+                            <div className="space-y-1">
+                              <p className="text-[10px] font-black text-secondary-400 uppercase tracking-widest">Role</p>
+                              <span className={cn(
+                                "inline-flex px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-tight",
+                                u.role === Role.ADMIN ? "bg-amber-100 text-amber-800 dark:bg-amber-900/20 dark:text-amber-400" :
+                                u.role === Role.COORDINATOR ? "bg-purple-100 text-purple-700 dark:bg-purple-900/20 dark:text-purple-400" :
+                                u.role === Role.HANDLER ? "bg-teal-100 text-teal-700 dark:bg-teal-900/20 dark:text-teal-400" :
+                                "bg-blue-100 text-blue-700 dark:bg-blue-900/20 dark:text-blue-400"
+                              )}>
+                                {u.role}
+                              </span>
+                            </div>
+                            <div className="space-y-1 text-right">
+                              <p className="text-[10px] font-black text-secondary-400 uppercase tracking-widest">Mobile No.</p>
+                              <p className="text-xs font-semibold text-secondary-700 dark:text-white/80">{u.mobileNumber || "—"}</p>
+                            </div>
+                          </div>
+
+                          <div className="pt-4 border-t border-secondary-100 dark:border-border flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                               <div className={cn("w-2.5 h-2.5 rounded-full", u.isActive ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" : "bg-red-500")} />
+                               <span className="text-[11px] font-bold text-secondary-600 dark:text-white/70 uppercase tracking-tighter">Status: {u.isActive ? "Active" : "Inactive"}</span>
+                            </div>
+                            {currentUser && u.id === currentUser.id ? (
+                              <div className="w-11 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+                                <div className="w-3 h-3 rounded-full bg-primary" />
+                              </div>
+                            ) : (
+                              <Switch
+                                checked={u.isActive}
+                                onCheckedChange={() => updateUser.mutate({ id: u.id, data: { isActive: !u.isActive } })}
+                                disabled={updateUser.isPending}
+                              />
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+
+                    {filteredUsers.length === 0 && (
+                      <div className="text-center py-16 bg-secondary-50/50 dark:bg-secondary-900/10 rounded-2xl border-2 border-dashed border-secondary-200 dark:border-border">
+                        <div className="p-4 bg-white dark:bg-card rounded-full w-fit mx-auto shadow-sm mb-4">
+                          <Search className="w-8 h-8 text-secondary-300" />
+                        </div>
+                        <h3 className="text-lg font-bold text-secondary-900 dark:text-white">No users found</h3>
+                        <p className="text-sm text-secondary-500 dark:text-white/60 mt-1 max-w-[250px] mx-auto">
+                          {searchTerm
+                            ? `We couldn't find any results for "${searchTerm}"`
+                            : "Start by adding your first system user to manage the platform."}
+                        </p>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1213,12 +1302,12 @@ export default function SettingsPage() {
         >
           <div className="overflow-y-auto p-6 pt-0 space-y-6">
             {/* Profile Basics Row */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="space-y-2 col-span-2">
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Name <span className="text-rose-500">*</span></Label>
                 <Input
                   {...register("name")}
-                  className="h-12 px-4 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
+                  className="h-11 sm:h-12 px-4 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
                   placeholder="e.g. Rahul Sharma"
                 />
                 {errors.name && (
@@ -1228,13 +1317,13 @@ export default function SettingsPage() {
             </div>
 
             {/* Login Credentials Row */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Username <span className="text-rose-500">*</span></Label>
                 <div className="relative group">
                   <Input
                     {...register("username")}
-                    className="h-12 px-4 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
+                    className="h-11 sm:h-12 px-4 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
                     placeholder="rahul.s"
                   />
                 </div>
@@ -1248,7 +1337,7 @@ export default function SettingsPage() {
                   <Input
                     type={showPassword ? "text" : "password"}
                     {...register("password")}
-                    className="h-12 pl-4 pr-12 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
+                    className="h-11 sm:h-12 pl-4 pr-12 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
                     placeholder={editingUser ? "Keep existing" : "••••••••"}
                   />
                   <button
@@ -1266,7 +1355,7 @@ export default function SettingsPage() {
             </div>
 
             {/* Contact / department / role */}
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
               <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Contact Number {(watch("role") === Role.COORDINATOR || watch("role") === Role.HANDLER) ? "*" : ""}</Label>
                 <Input
@@ -1276,7 +1365,7 @@ export default function SettingsPage() {
                     e.target.value = value;
                     register("mobileNumber").onChange(e);
                   }}
-                  className="h-12 px-4 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
+                  className="h-11 sm:h-12 px-4 rounded-xl border-slate-200 focus:ring-2 focus:ring-slate-950 transition-all font-medium"
                   placeholder="10-digit mobile"
                 />
                 {errors.mobileNumber && (
@@ -1287,7 +1376,7 @@ export default function SettingsPage() {
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Department</Label>
                 <select
                   {...register("profileDepartment")}
-                  className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
+                  className="h-11 sm:h-12 w-full px-4 rounded-xl border border-slate-200 bg-white dark:bg-card text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
                 >
                   <option value="">— None —</option>
                   {departments
@@ -1299,11 +1388,11 @@ export default function SettingsPage() {
                     ))}
                 </select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Role <span className="text-rose-500">*</span></Label>
                 <select
                   {...register("role")}
-                  className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
+                  className="h-11 sm:h-12 w-full px-4 rounded-xl border border-slate-200 bg-white dark:bg-card text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
                 >
                   <option value={Role.USER}>User</option>
                   <option value={Role.COORDINATOR}>Coordinator</option>
@@ -1314,11 +1403,11 @@ export default function SettingsPage() {
             </div>
 
             {/* Organization Context Row */}
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Primary Company <span className="text-rose-500">*</span></Label>
                 <select
-                  className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
+                  className="h-11 sm:h-12 w-full px-4 rounded-xl border border-slate-200 bg-white dark:bg-card text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none"
                   value={watch("companyId") ?? ""}
                   onChange={(e) => {
                     const v = e.target.value ? Number(e.target.value) : undefined;
@@ -1338,7 +1427,7 @@ export default function SettingsPage() {
               <div className="space-y-2">
                 <Label className="text-[11px] font-black uppercase tracking-wider text-slate-500 ml-1">Assigned Location <span className="text-rose-500">*</span></Label>
                 <select
-                  className="h-12 w-full px-4 rounded-xl border border-slate-200 bg-white text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none disabled:bg-slate-50/50 disabled:text-slate-400"
+                  className="h-11 sm:h-12 w-full px-4 rounded-xl border border-slate-200 bg-white dark:bg-card text-sm font-medium focus:ring-2 focus:ring-slate-950 transition-all appearance-none outline-none disabled:bg-slate-50/50 disabled:text-slate-400"
                   value={watch("locationId") ?? ""}
                   onChange={(e) => setValue("locationId", e.target.value ? Number(e.target.value) : undefined)}
                   disabled={!watch("companyId")}

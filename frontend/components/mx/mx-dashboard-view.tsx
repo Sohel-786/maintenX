@@ -180,19 +180,19 @@ export function MxDashboardView() {
   const colCount = (showCompany ? 1 : 0) + 8;
 
   return (
-    <div className="p-6">
-      <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-start">
+    <div className="p-4 sm:p-6 lg:p-8">
+      <div className="mb-6 flex flex-col justify-between gap-4 lg:flex-row lg:items-center">
         <div>
-          <h1 className="mb-2 text-3xl font-bold tracking-tight text-secondary-900">Dashboard</h1>
-          <p className="font-medium text-secondary-500">
+          <h1 className="mb-2 text-2xl sm:text-3xl font-bold tracking-tight text-secondary-900">Dashboard</h1>
+          <p className="text-xs sm:text-sm font-medium text-secondary-500">
             Welcome back, {user?.firstName ?? "there"} — click a summary card to filter the table below.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 w-full lg:w-auto">
           {permissions?.raiseComplaint && (
             <Button
               type="button"
-              className="gap-2 bg-primary-600 font-semibold hover:bg-primary-700"
+              className="gap-2 bg-primary-600 font-semibold hover:bg-primary-700 w-full lg:w-auto h-11 lg:h-10"
               onClick={() => window.dispatchEvent(new CustomEvent("openRaiseTicket"))}
             >
               <PlusCircle className="h-4 w-4" />
@@ -206,7 +206,7 @@ export function MxDashboardView() {
         <div className="flex justify-center py-16 text-secondary-500">Loading dashboard…</div>
       ) : (
         <>
-          <div className="mb-8 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mb-8 grid grid-cols-2 gap-3 sm:gap-4 md:grid-cols-4 lg:gap-6">
             {[
               {
                 key: "total" as const,
@@ -286,7 +286,7 @@ export function MxDashboardView() {
                     else setStatusGroup("completed");
                   }}
                   className={cn(
-                    "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-5 text-left transition-all duration-500 ease-out",
+                    "group relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border p-3 sm:p-4 lg:p-5 text-left transition-all duration-500 ease-out",
                     theme.border,
                     active ? theme.active : cn(theme.inactive, theme.shadow, "hover:scale-[1.02] hover:shadow-2xl hover:border-white/20")
                   )}
@@ -296,26 +296,26 @@ export function MxDashboardView() {
                     <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity" />
                   )}
                   
-                  <div className="relative flex items-start justify-between gap-4">
-                    <div>
+                  <div className="relative flex items-start justify-between gap-2 sm:gap-4">
+                    <div className="min-w-0">
                       <p className={cn(
-                        "text-[10px] font-black uppercase tracking-[0.15em]",
+                        "text-[8px] xs:text-[9px] sm:text-[10px] font-black uppercase tracking-[0.1em] sm:tracking-[0.15em]",
                         active ? "text-white/80" : "text-secondary-500 dark:text-secondary-400"
                       )}>
                         {c.label}
                       </p>
                       <p className={cn(
-                        "mt-1.5 text-4xl font-black tabular-nums tracking-tighter",
+                        "mt-0.5 sm:mt-1 text-2xl sm:text-3xl lg:text-4xl font-black tabular-nums tracking-tighter truncate",
                         active ? "text-white" : "text-secondary-900 dark:text-white"
                       )}>
                         {c.value}
                       </p>
                     </div>
                     <div className={cn(
-                      "rounded-xl p-3 shadow-lg transition-transform duration-500 group-hover:rotate-12",
+                      "rounded-lg sm:rounded-xl p-2 sm:p-3 shadow-lg transition-transform duration-500 group-hover:rotate-12 shrink-0",
                       active ? "bg-white/20 text-white backdrop-blur-sm" : theme.iconWrapper
                     )}>
-                      <Icon className="h-5 w-5" />
+                      <Icon className="h-4 w-4 sm:h-5 w-5" />
                     </div>
                   </div>
 
@@ -347,11 +347,11 @@ export function MxDashboardView() {
                 </h3>
                 <p className="text-xs text-secondary-500">{kpiContext}</p>
               </div>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-2 w-full sm:w-auto">
                 <Button
                   type="button"
                   size="sm"
-                  className="gap-2 bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700 disabled:opacity-70"
+                  className="gap-2 bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700 disabled:opacity-70 w-full sm:w-auto h-11 sm:h-9"
                   disabled={exporting || rows.length === 0}
                   loading={exporting}
                   onClick={() => void onExport()}
@@ -361,23 +361,23 @@ export function MxDashboardView() {
                 </Button>
               </div>
             </div>
-            <div className="flex flex-col flex-wrap gap-4 p-4 lg:flex-row lg:items-end">
-              <div className="min-w-0 flex-1 flex-col">
+            <div className="flex flex-row flex-wrap items-end gap-3 lg:gap-4 p-4">
+              <div className="w-full sm:flex-1 min-w-0 flex flex-col">
                 <label className={filterLabelClass}>Search</label>
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary-400" />
                   <Input
                     placeholder="Ticket no, description…"
-                    className="h-10 border-secondary-200 pl-9 text-sm focus:ring-primary-500"
+                    className="h-11 lg:h-10 border-secondary-200 pl-9 text-sm focus:ring-primary-500"
                     value={searchInput}
                     onChange={(e) => setSearchInput(e.target.value)}
                   />
                 </div>
               </div>
-              <div className="w-full flex-col sm:w-44">
+              <div className="flex-[2] min-w-[120px] sm:flex-none sm:w-44 flex flex-col">
                 <label className={filterLabelClass}>Category</label>
                 <select
-                  className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
+                  className="mt-1 flex h-11 lg:h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm"
                   value={categoryId === "" ? "" : String(categoryId)}
                   onChange={(e) => setCategoryId(e.target.value ? Number(e.target.value) : "")}
                 >
@@ -390,10 +390,10 @@ export function MxDashboardView() {
                 </select>
               </div>
               {statusGroup !== "open" && (
-                <div className="w-full flex-col sm:w-44">
+                <div className="flex-[2] min-w-[120px] sm:flex-none sm:w-44 flex flex-col">
                   <label className={filterLabelClass}>Status</label>
                   <select
-                    className="mt-1 flex h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
+                    className="mt-1 flex h-11 lg:h-10 w-full rounded-md border border-secondary-200 bg-white px-3 py-2 text-sm focus:ring-2 focus:ring-primary-500/20 focus:border-primary-500 transition-all font-medium"
                     value={statusExtra}
                     onChange={(e) => {
                       const v = (e.target.value || "") as ComplaintStatus | "";
@@ -404,10 +404,10 @@ export function MxDashboardView() {
                     {Object.values(ComplaintStatus)
                       .filter((st) => {
                         if (statusGroup === "inprogress") {
-                          return [ComplaintStatus.Assigned, ComplaintStatus.Accepted, ComplaintStatus.InProgress].includes(st);
+                           return [ComplaintStatus.Assigned, ComplaintStatus.Accepted, ComplaintStatus.InProgress].includes(st);
                         }
                         if (statusGroup === "completed") {
-                          return [ComplaintStatus.Done, ComplaintStatus.Closed].includes(st);
+                           return [ComplaintStatus.Done, ComplaintStatus.Closed].includes(st);
                         }
                         return true;
                       })
@@ -419,26 +419,30 @@ export function MxDashboardView() {
                   </select>
                 </div>
               )}
-              <div className="w-20 max-w-[5.5rem] shrink-0">
+              <div className="flex-1 min-w-[80px] sm:flex-none sm:w-20 lg:w-24 shrink-0 flex flex-col">
                 <label className={filterLabelClass}>Rows</label>
-                <PageSizeSelect value={pageSize} onChange={(v) => { setPageSize(v); setPage(1); }} />
+                <div className="h-11 lg:h-10">
+                  <PageSizeSelect value={pageSize} onChange={(v) => { setPageSize(v); setPage(1); }} />
+                </div>
               </div>
               {hasAdvancedFilters && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="h-10 border-secondary-200 text-secondary-600 hover:bg-secondary-50"
-                  onClick={() => {
-                    setSearchInput("");
-                    setCategoryId("");
-                    setStatusExtra("");
-                    setPage(1);
-                  }}
-                >
-                  <X className="mr-1.5 h-3.5 w-3.5" />
-                  Clear filters
-                </Button>
+                <div className="w-full sm:w-auto">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-11 lg:h-10 border-secondary-200 text-secondary-600 hover:bg-secondary-50 w-full sm:w-auto"
+                    onClick={() => {
+                      setSearchInput("");
+                      setCategoryId("");
+                      setStatusExtra("");
+                      setPage(1);
+                    }}
+                  >
+                    <X className="mr-1.5 h-3.5 w-3.5" />
+                    Clear filters
+                  </Button>
+                </div>
               )}
             </div>
             <div className="table-container overflow-x-auto px-0 pb-4">

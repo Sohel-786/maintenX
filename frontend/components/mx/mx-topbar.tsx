@@ -6,7 +6,7 @@ import { useAppSettings, useCompany, useCurrentUserPermissions } from "@/hooks/u
 import { useLocationContext } from "@/contexts/location-context";
 import { useLogout } from "@/hooks/use-auth-mutations";
 import { ThemeToggle } from "@/components/layout/theme-toggle";
-import { Building2, MapPin, ChevronDown, LogOut } from "lucide-react";
+import { Building2, MapPin, ChevronDown, LogOut, Menu } from "lucide-react";
 
 function roleLabel(role: Role) {
   switch (role) {
@@ -25,7 +25,15 @@ function initials(u: User) {
   return `${u.firstName?.[0] ?? ""}${u.lastName?.[0] ?? ""}`.toUpperCase() || "U";
 }
 
-export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?: number }) {
+export function MxTopbar({ 
+  user, 
+  leftOffsetPx = 0, 
+  onToggleMobile 
+}: { 
+  user: User; 
+  leftOffsetPx?: number;
+  onToggleMobile: () => void;
+}) {
   const { data: appSettings } = useAppSettings();
   const { data: permissions } = useCurrentUserPermissions();
   const { selected, allowedAccess, getAllPairs } = useLocationContext();
@@ -83,16 +91,35 @@ export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?
 
   return (
     <header
-      className="mx-topbar sticky top-0 z-40 flex h-20 shrink-0 items-center gap-6 px-6 text-white shadow-md"
-      style={{ background: "var(--mx-navy-900)", paddingLeft: 24 + leftOffsetPx }}
+      className="mx-topbar sticky top-0 z-40 flex h-20 shrink-0 items-center justify-between lg:justify-start gap-4 lg:gap-6 px-4 lg:px-6 text-white shadow-md"
+      style={{ background: "var(--mx-navy-900)", paddingLeft: "var(--topbar-padding-left, 24px)" }}
     >
-      <div className="flex items-center gap-6 min-w-0">
+      <style jsx>{`
+        header {
+          --topbar-padding-left: 24px;
+        }
+        @media (min-width: 1024px) {
+          header {
+            --topbar-padding-left: ${24 + leftOffsetPx}px;
+          }
+        }
+      `}</style>
+      
+      <div className="flex items-center gap-4 lg:gap-6 min-w-0">
+        <button
+          type="button"
+          onClick={onToggleMobile}
+          className="rounded-lg border border-white/10 bg-white/5 p-2 text-white shadow-sm transition-all hover:bg-white/10 lg:hidden"
+        >
+          <Menu className="h-6 w-6" />
+        </button>
+
         {hasLogo ? (
           <div className="flex items-center shrink-0 bg-transparent">
             <img
               src={logoUrlToRender!}
               alt=""
-              className="max-h-[72px] max-w-[140px] w-auto h-auto object-contain object-center"
+              className="max-h-[50px] lg:max-h-[72px] max-w-[100px] lg:max-w-[140px] w-auto h-auto object-contain object-center"
               onError={() => {
                 setLogoTryIndex((idx) => {
                   if (idx + 1 < logoCandidates.length) return idx + 1;
@@ -102,8 +129,8 @@ export function MxTopbar({ user, leftOffsetPx = 0 }: { user: User; leftOffsetPx?
             />
           </div>
         ) : (
-          <div className="flex h-16 w-16 shrink-0 items-center justify-center text-white/85">
-            <Building2 className="h-9 w-9" />
+          <div className="flex h-12 w-12 lg:h-16 lg:w-16 shrink-0 items-center justify-center text-white/85">
+            <Building2 className="h-7 w-7 lg:h-9 lg:w-9" />
           </div>
         )}
 
