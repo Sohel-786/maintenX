@@ -17,6 +17,7 @@ import {
   ListChecks,
   Wrench,
   Tags,
+  Layers,
 } from "lucide-react";
 import api from "@/lib/api";
 import { UserPermission } from "@/types";
@@ -189,10 +190,16 @@ export function PermissionDialog({ isOpen, onClose, userId, userName }: Permissi
                     icon={Wrench}
                   />
                   <PermissionToggle
-                    label="Categories"
+                    label="Manage Categories"
                     checked={permissions?.manageCategories ?? false}
                     onChange={(v) => updatePermission("manageCategories", v)}
                     icon={Tags}
+                  />
+                  <PermissionToggle
+                    label="Manage Departments"
+                    checked={permissions?.manageDepartment ?? false}
+                    onChange={(v) => updatePermission("manageDepartment", v)}
+                    icon={Layers}
                   />
                 </div>
               </div>

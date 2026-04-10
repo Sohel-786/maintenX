@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { formatDateTime } from "@/lib/utils";
 import { TicketDetailDialog } from "@/components/mx/ticket-detail-dialog";
-import { Search, X } from "lucide-react";
+import { Search, X, Eye } from "lucide-react";
 import { PageSizeSelect } from "@/components/ui/page-size-select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { PAGINATION_VISIBLE_THRESHOLD } from "@/lib/pagination";
@@ -193,6 +193,7 @@ export default function AssignWorkPage() {
               <th className="px-4 py-3 font-semibold">Handler</th>
               {showAssign && <th className="min-w-[200px] px-4 py-3 font-semibold">Assign / reassign</th>}
               <th className="px-4 py-3 font-semibold">Updated</th>
+              <th className="w-14 px-4 py-3 text-center font-semibold">View</th>
             </tr>
           </thead>
           <tbody>
@@ -215,8 +216,7 @@ export default function AssignWorkPage() {
               rows.map((r, idx) => (
                 <tr
                   key={r.id}
-                  className="cursor-pointer border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
-                  onClick={() => setDetailId(r.id)}
+                  className="border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
                 >
                   {/*
                     For reassign flows: do not show the currently assigned handler in the picker.
@@ -280,6 +280,17 @@ export default function AssignWorkPage() {
                   )}
                   <td className="px-4 py-3 text-xs text-secondary-500">
                     {formatDateTime(r.updatedAt)}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-primary-600 hover:bg-primary-50 hover:text-primary-700 dark:text-primary-400 dark:hover:bg-primary-900/30"
+                      onClick={() => setDetailId(r.id)}
+                      title="View Details"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
                   </td>
                 </tr>
               ))

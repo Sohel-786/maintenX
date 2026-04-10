@@ -14,6 +14,7 @@ import {
   LogOut,
   ClipboardList,
   Tags,
+  Layers,
 } from "lucide-react";
 import { Role } from "@/types";
 import { useAppSettings, useCurrentUserPermissions, useCompany } from "@/hooks/use-settings";
@@ -96,7 +97,7 @@ export function Sidebar({ userRole, expanded, onExpandChange, sidebarWidth }: Si
 
   const masterVisible =
     permissions?.viewMaster &&
-    (permissions.manageCompany || permissions.manageLocation);
+    (permissions.manageCompany || permissions.manageLocation || permissions.manageCategories || permissions.manageDepartment);
 
   return (
     <aside
@@ -145,14 +146,14 @@ export function Sidebar({ userRole, expanded, onExpandChange, sidebarWidth }: Si
       <nav className="flex-1 overflow-y-auto overflow-x-hidden py-2 px-2 scrollbar-hide">
         <div className="space-y-0.5">
           {permissions?.viewDashboard && renderMenuItem("/dashboard", "Dashboard", LayoutDashboard)}
-          {permissions?.viewComplaints && renderMenuItem("/complaints", "Complaints", ClipboardList)}
-          {permissions?.raiseComplaint && renderMenuItem("/complaints/raise", "Raise complaint", ClipboardList)}
-          {permissions?.manageCategories && renderMenuItem("/categories", "Categories", Tags)}
-
+          {permissions?.viewComplaints && renderMenuItem("/all-tickets", "All tickets", ClipboardList)}
+          {permissions?.raiseComplaint && renderMenuItem("/complaints/raise", "Raise new tickets", ClipboardList)}
           {masterVisible && (
             <div className={`pt-1 ${showFullSidebar ? "border-t border-secondary-100 dark:border-[#21262d] mt-1" : ""} space-y-0.5`}>
-              {permissions?.manageCompany && renderMenuItem("/companies", "Company master", Building2)}
-              {permissions?.manageLocation && renderMenuItem("/locations", "Location master", MapPin)}
+              {permissions?.manageCompany && renderMenuItem("/companies", "Companies", Building2)}
+              {permissions?.manageLocation && renderMenuItem("/locations", "Locations", MapPin)}
+              {permissions?.manageCategories && renderMenuItem("/categories", "Categories", Tags)}
+              {permissions?.manageDepartment && renderMenuItem("/departments", "Departments", Layers)}
             </div>
           )}
 

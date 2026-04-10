@@ -27,6 +27,8 @@ namespace net_backend.Services
             perm.ExportMaster = true;
             perm.ManageCompany = true;
             perm.ManageLocation = true;
+            perm.ManageCategories = true;
+            perm.ManageDepartment = true;
             perm.AccessSettings = true;
             perm.UpdatedAt = DateTime.Now;
         }
@@ -47,6 +49,7 @@ namespace net_backend.Services
                     p.AssignComplaints = true;
                     p.HandleComplaints = false;
                     p.ManageCategories = false;
+                    p.ManageDepartment = false;
                     break;
                 case Role.HANDLER:
                     p.ViewDashboard = true;
@@ -56,6 +59,7 @@ namespace net_backend.Services
                     p.AssignComplaints = false;
                     p.HandleComplaints = true;
                     p.ManageCategories = false;
+                    p.ManageDepartment = false;
                     break;
                 case Role.USER:
                 default:
@@ -66,6 +70,7 @@ namespace net_backend.Services
                     p.AssignComplaints = false;
                     p.HandleComplaints = false;
                     p.ManageCategories = false;
+                    p.ManageDepartment = false;
                     break;
             }
             return p;

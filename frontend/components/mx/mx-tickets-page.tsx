@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { formatDateTime } from "@/lib/utils";
 import { TicketDetailDialog } from "./ticket-detail-dialog";
 import { Dialog } from "@/components/ui/dialog";
-import { Search, X } from "lucide-react";
+import { Search, X, Eye } from "lucide-react";
 import { PageSizeSelect } from "@/components/ui/page-size-select";
 import { TablePagination } from "@/components/ui/table-pagination";
 import { PAGINATION_VISIBLE_THRESHOLD } from "@/lib/pagination";
@@ -130,7 +130,7 @@ export function MxTicketsPage({
     categoryId !== "" ||
     (!lockStatus && localStatus !== "");
 
-  const colCount = (showCompanyColumn ? 1 : 0) + 7 + (isHandlerWorkActions ? 1 : 0);
+  const colCount = (showCompanyColumn ? 1 : 0) + 8 + (isHandlerWorkActions ? 1 : 0);
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: ["complaints"] });
@@ -284,6 +284,7 @@ export function MxTicketsPage({
                   </th>
                 )}
                 <th className="px-4 py-3 font-semibold">Updated</th>
+                <th className="w-14 px-4 py-3 text-center font-semibold">View</th>
               </tr>
             </thead>
             <tbody>
@@ -306,8 +307,7 @@ export function MxTicketsPage({
                 rows.map((r, idx) => (
                   <tr
                     key={r.id}
-                    className="cursor-pointer border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
-                    onClick={() => setDetailId(r.id)}
+                    className="border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
                   >
                     <td className="px-4 py-3 text-center text-secondary-500">
                       {totalCount - (page - 1) * pageSize - idx}
@@ -360,6 +360,17 @@ export function MxTicketsPage({
                     )}
                     <td className="px-4 py-3 text-xs text-secondary-500">
                       {formatDateTime(r.updatedAt)}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-primary-600 hover:bg-primary-50 hover:text-primary-700 dark:text-primary-400 dark:hover:bg-primary-900/30"
+                        onClick={() => setDetailId(r.id)}
+                        title="View Details"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
                     </td>
                   </tr>
                 ))

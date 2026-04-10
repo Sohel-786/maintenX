@@ -83,7 +83,7 @@ namespace net_backend.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Create([FromBody] CreateFacilityDepartmentRequest request)
         {
-            if (!await HasPermission("ManageCategories")) return Forbidden();
+            if (!await HasPermission("ManageDepartment")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync(); // stored for legacy FK, but dept is company-scoped
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -118,7 +118,7 @@ namespace net_backend.Controllers
         [HttpPatch("{id:int}")]
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Update(int id, [FromBody] UpdateFacilityDepartmentRequest request)
         {
-            if (!await HasPermission("ManageCategories")) return Forbidden();
+            if (!await HasPermission("ManageDepartment")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
             var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
@@ -159,7 +159,7 @@ namespace net_backend.Controllers
         [HttpPatch("{id:int}/toggle")]
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Toggle(int id)
         {
-            if (!await HasPermission("ManageCategories")) return Forbidden();
+            if (!await HasPermission("ManageDepartment")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
             var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);

@@ -37,6 +37,11 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   async (error) => {
+    // If the request was cancelled (e.g. by browser navigation or React unmount), don't log or redirect.
+    if (error.code === 'ERR_CANCELED' || axios.isCancel(error)) {
+      return Promise.reject(error);
+    }
+
     if (error.response?.status === 401) {
       const requestUrl: string | undefined = error.config?.url;
       const backendMessage: string | undefined = error.response?.data?.message;
@@ -63,8 +68,12 @@ api.interceptors.response.use(
         typeof window !== "undefined" &&
         window.location.pathname !== "/login"
       ) {
-        // Redirect to login on unauthorized for protected API calls
-        window.location.href = "/login";
+        // Redirect to login on unauthorized for protected API calls.
+        // Use a small check to avoid multiple simultaneous redirects if many requests fail at once.
+        if (!(window as any)._isRedirectingToLogin) {
+          (window as any)._isRedirectingToLogin = true;
+          window.location.href = "/login";
+        }
       }
     }
     return Promise.reject(error);

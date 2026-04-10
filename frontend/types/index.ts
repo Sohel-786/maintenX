@@ -72,7 +72,6 @@ export interface UserPermission {
   viewAllComplaints: boolean;
   assignComplaints: boolean;
   handleComplaints: boolean;
-  manageCategories: boolean;
   viewMaster: boolean;
   addMaster: boolean;
   editMaster: boolean;
@@ -80,6 +79,8 @@ export interface UserPermission {
   exportMaster: boolean;
   manageCompany: boolean;
   manageLocation: boolean;
+  manageCategories: boolean;
+  manageDepartment: boolean;
   accessSettings: boolean;
   navigationLayout: 'SIDEBAR' | 'HORIZONTAL';
 }

@@ -23,11 +23,11 @@ const filterLabelClass = "text-[11px] font-medium text-secondary-500 uppercase t
 
 export default function DepartmentsPage() {
   const { data: permissions } = useCurrentUserPermissions();
-  const canManage = permissions?.manageCategories ?? false;
+  const canManage = permissions?.manageDepartment ?? false;
   const canAdd = canManage && (permissions?.addMaster ?? false);
   const canEdit = canManage && (permissions?.editMaster ?? false);
 
-  if (permissions && !permissions.manageCategories) {
+  if (permissions && !permissions.manageDepartment) {
     return <AccessDenied actionLabel="Go to Dashboard" actionHref="/dashboard" />;
   }
 
@@ -67,7 +67,7 @@ export default function DepartmentsPage() {
         total: res.data?.totalCount ?? 0,
       };
     },
-    enabled: !!permissions?.manageCategories,
+    enabled: !!permissions?.manageDepartment,
   });
 
   const rows = data?.list ?? [];

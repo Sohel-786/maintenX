@@ -77,7 +77,7 @@ export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
         condition: (p: any, u: User) => u.role === Role.USER && p.viewComplaints 
       },
       { 
-        label: "Raise", 
+        label: "Raise new tickets", 
         icon: PlusCircle, 
         colorBase: "emerald", 
         condition: (p: any, u: User) => u.role === Role.USER && p.raiseComplaint,
@@ -93,7 +93,7 @@ export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
       },
       { 
         href: "/assign-work", 
-        label: "Assign", 
+        label: "Assign work", 
         icon: UserPlus, 
         colorBase: "sky", 
         badge: counts?.open,
@@ -101,7 +101,7 @@ export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
       },
       { 
         href: "/close-tickets", 
-        label: "Close", 
+        label: "Close tickets", 
         icon: CheckCircle, 
         colorBase: "violet", 
         badge: counts?.done,
@@ -109,7 +109,7 @@ export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
       },
       { 
         href: "/my-work", 
-        label: "Queue", 
+        label: "My work queue", 
         icon: Wrench, 
         colorBase: "orange", 
         condition: (p: any, u: User) => p.handleComplaints && (u.role === Role.HANDLER || u.role === Role.ADMIN)
@@ -118,31 +118,31 @@ export function HorizontalNav({ isExpanded, user }: HorizontalNavProps) {
     masters: [
       { 
         href: "/companies", 
-        label: "Company Master", 
+        label: "Companies", 
         icon: Building2, 
         colorBase: "indigo", 
         condition: (p: any) => !!p.viewMaster && p.manageCompany 
       },
       { 
         href: "/locations", 
-        label: "Location Master", 
+        label: "Locations", 
         icon: MapPin, 
         colorBase: "emerald", 
         condition: (p: any) => !!p.viewMaster && p.manageLocation 
       },
       { 
         href: "/categories", 
-        label: "Category Master", 
+        label: "Categories", 
         icon: Tags, 
         colorBase: "purple", 
         condition: (p: any) => p.manageCategories 
       },
       { 
         href: "/departments", 
-        label: "Dept Master", 
+        label: "Departments", 
         icon: Layers, 
         colorBase: "rose", 
-        condition: (p: any) => p.manageCategories 
+        condition: (p: any) => p.manageDepartment 
       },
     ],
     other: [

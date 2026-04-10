@@ -253,7 +253,6 @@ namespace net_backend.Models
         public bool ViewAllComplaints { get; set; }
         public bool AssignComplaints { get; set; }
         public bool HandleComplaints { get; set; }
-        public bool ManageCategories { get; set; }
 
         public bool ViewMaster { get; set; }
         public bool AddMaster { get; set; }
@@ -262,6 +261,8 @@ namespace net_backend.Models
         public bool ExportMaster { get; set; }
         public bool ManageCompany { get; set; }
         public bool ManageLocation { get; set; }
+        public bool ManageCategories { get; set; }
+        public bool ManageDepartment { get; set; }
 
         public bool AccessSettings { get; set; }
 

@@ -15,6 +15,7 @@ import {
   Search,
   BarChart3,
   PlusCircle,
+  Eye,
 } from "lucide-react";
 import api from "@/lib/api";
 import {
@@ -176,7 +177,7 @@ export function MxDashboardView() {
     }
   }, [listParams, selected, exporting]);
 
-  const colCount = (showCompany ? 1 : 0) + 7;
+  const colCount = (showCompany ? 1 : 0) + 8;
 
   return (
     <div className="p-6">
@@ -452,6 +453,7 @@ export function MxDashboardView() {
                     <th className="px-4 py-3 font-semibold">Status</th>
                     <th className="px-4 py-3 font-semibold">Handler</th>
                     <th className="px-4 py-3 font-semibold">Updated</th>
+                    <th className="w-14 px-4 py-3 text-center font-semibold">View</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -474,8 +476,7 @@ export function MxDashboardView() {
                     rows.map((r, idx) => (
                       <tr
                         key={r.id}
-                        className="cursor-pointer border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
-                        onClick={() => setDetailId(r.id)}
+                        className="border-b border-secondary-100 transition-colors hover:bg-primary-50/30"
                       >
                         <td className="px-4 py-3 text-center text-secondary-500">
                           {totalCount - (page - 1) * pageSize - idx}
@@ -496,6 +497,17 @@ export function MxDashboardView() {
                         <td className="px-4 py-3">{r.assignedHandlerName ?? "—"}</td>
                         <td className="px-4 py-3 text-xs text-secondary-600">
                           {formatDateTime(r.updatedAt)}
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 text-primary-600 hover:bg-primary-50 hover:text-primary-700 dark:text-primary-400 dark:hover:bg-primary-900/30"
+                            onClick={() => setDetailId(r.id)}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </td>
                       </tr>
                     ))

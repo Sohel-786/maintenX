@@ -106,21 +106,21 @@ const userSchema = z.object({
 type UserForm = z.infer<typeof userSchema>;
 
 const permissionLabels: Record<string, string> = {
-  viewDashboard: "View Dashboard",
-  viewComplaints: "View complaints module",
-  raiseComplaint: "Raise complaints",
-  viewAllComplaints: "View all complaints (location)",
-  assignComplaints: "Assign complaints & change status",
-  handleComplaints: "Handle assigned work (accept/start/complete)",
-  manageCategories: "Manage complaint categories",
-  viewMaster: "View master data screens",
-  addMaster: "Add master records",
-  editMaster: "Edit master records",
-  importMaster: "Import master data",
-  exportMaster: "Export master data",
-  manageCompany: "Company master",
-  manageLocation: "Location master",
-  accessSettings: "System settings & users",
+  viewDashboard: "Dashboard",
+  viewComplaints: "All tickets (Browsing Access)",
+  raiseComplaint: "Raise new tickets",
+  assignComplaints: "Assign work & Close tickets",
+  handleComplaints: "My work queue",
+  viewMaster: "Master Entry (Global Access)",
+  addMaster: "Add Data",
+  editMaster: "Edit Data",
+  importMaster: "Import Data",
+  exportMaster: "Export Data",
+  manageCompany: "Companies",
+  manageLocation: "Locations",
+  manageCategories: "Categories",
+  manageDepartment: "Departments",
+  accessSettings: "Settings Access",
 };
 
 const permissionKeys = Object.keys(
@@ -820,14 +820,14 @@ export default function SettingsPage() {
                               <CardContent className="p-0 divide-y divide-secondary-100 dark:divide-border">
                                 <label className="flex items-center justify-between p-4 hover:bg-secondary-50/50 dark:hover:bg-secondary-900/25 cursor-pointer group">
                                   <div>
-                                    <p className="text-sm font-medium text-primary-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-white transition-colors">Dashboard Access</p>
+                                    <p className="text-sm font-medium text-primary-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-white transition-colors">Dashboard</p>
                                     <p className="text-xs text-secondary-500 dark:text-white/70 mt-0.5">View dashboard statistics.</p>
                                   </div>
                                   <input type="checkbox" checked={localPermissions.viewDashboard} onChange={(e) => handlePermissionChange("viewDashboard", e.target.checked)} className="w-5 h-5 rounded border-secondary-300 text-primary-600 focus:ring-primary-500 cursor-pointer" />
                                 </label>
                                 <label className="flex items-center justify-between p-4 hover:bg-secondary-50/50 dark:hover:bg-secondary-900/25 cursor-pointer group">
                                   <div>
-                                    <p className="text-sm font-medium text-primary-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-white transition-colors">Access Settings</p>
+                                    <p className="text-sm font-medium text-primary-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-white transition-colors">Settings Access</p>
                                     <p className="text-xs text-secondary-500 dark:text-white/70 mt-0.5">Manage system configuration.</p>
                                   </div>
                                   <input type="checkbox" checked={localPermissions.accessSettings} onChange={(e) => handlePermissionChange("accessSettings", e.target.checked)} disabled={localPermissions.accessSettings && (currentUser?.id === selectedUserId || isManagedUserAdmin)} className="w-5 h-5 rounded border-secondary-300 text-primary-600 focus:ring-primary-500 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed" />
@@ -852,20 +852,19 @@ export default function SettingsPage() {
                                   <div className="p-2 bg-blue-100/50 dark:bg-blue-900/20 rounded-xl text-blue-600 dark:text-blue-400">
                                     <ClipboardList className="w-5 h-5" />
                                   </div>
-                                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Complaints</CardTitle>
+                                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Main Navigation</CardTitle>
                                 </div>
                               </CardHeader>
                               <CardContent className="p-0 divide-y divide-secondary-100 dark:divide-border">
-                                {(
-                                  [
-                                    ["viewComplaints", "View complaints"],
-                                    ["raiseComplaint", "Raise complaints"],
-                                    ["viewAllComplaints", "View all complaints (location)"],
-                                    ["assignComplaints", "Assign & coordinate (status / close)"],
-                                    ["handleComplaints", "Handle assigned work"],
-                                    ["manageCategories", "Manage categories"],
-                                  ] as const
-                                ).map(([key, desc]) => (
+                                {
+                                  (
+                                    [
+                                      ["viewComplaints", "Browsing module access"],
+                                      ["raiseComplaint", "Ability to raise new tickets"],
+                                      ["assignComplaints", "Assign work & Close tickets"],
+                                      ["handleComplaints", "Access to 'My work queue'"],
+                                    ] as const
+                                  ).map(([key, desc]) => (
                                   <label key={key} className="flex items-center justify-between p-4 hover:bg-secondary-50/50 dark:hover:bg-secondary-900/25 cursor-pointer group">
                                     <div>
                                       <p className="text-sm font-medium text-primary-900 dark:text-white">{permissionLabels[key]}</p>
@@ -888,14 +887,14 @@ export default function SettingsPage() {
                                   <div className="p-2 bg-orange-100/50 dark:bg-orange-900/20 rounded-xl text-orange-600 dark:text-orange-400">
                                     <Database className="w-5 h-5" />
                                   </div>
-                                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Master (Company & Location)</CardTitle>
+                                  <CardTitle className="text-base font-bold text-slate-900 dark:text-white tracking-tight">Master Entry</CardTitle>
                                 </div>
                               </CardHeader>
                               <CardContent className="p-0 divide-y divide-secondary-100 dark:divide-border">
                                 <label className="flex items-center justify-between p-4 hover:bg-secondary-50/50 dark:hover:bg-secondary-900/25 cursor-pointer">
                                   <div>
-                                    <p className="text-sm font-medium text-primary-900 dark:text-white">Global master view</p>
-                                    <p className="text-xs text-secondary-500 dark:text-white/70">Open company / location screens.</p>
+                                    <p className="text-sm font-medium text-primary-900 dark:text-white font-bold">Global master view</p>
+                                    <p className="text-xs text-secondary-500 dark:text-white/70">Access master data screens.</p>
                                   </div>
                                   <input type="checkbox" checked={localPermissions.viewMaster} onChange={(e) => handlePermissionChange("viewMaster", e.target.checked)} className="w-5 h-5 rounded border-secondary-300 text-orange-600 focus:ring-orange-500" />
                                 </label>
@@ -911,13 +910,21 @@ export default function SettingsPage() {
                                   </div>
                                 </div>
                                 <div className="p-4 space-y-3">
-                                  <label className="flex items-center justify-between cursor-pointer group">
-                                    <span className="text-xs font-medium text-secondary-600 dark:text-white/80 uppercase tracking-tight">Company master</span>
+                                  <label className="flex items-center justify-between cursor-pointer group hover:bg-orange-50/50 p-1 rounded transition-colors">
+                                    <span className="text-xs font-semibold text-secondary-600 dark:text-white/80 uppercase tracking-tight">Companies</span>
                                     <input type="checkbox" checked={localPermissions.manageCompany} onChange={(e) => handlePermissionChange("manageCompany", e.target.checked)} className="w-4 h-4 rounded border-secondary-300 text-orange-600 focus:ring-orange-500" />
                                   </label>
-                                  <label className="flex items-center justify-between cursor-pointer group">
-                                    <span className="text-xs font-medium text-secondary-600 dark:text-white/80 uppercase tracking-tight">Location master</span>
+                                  <label className="flex items-center justify-between cursor-pointer group hover:bg-orange-50/50 p-1 rounded transition-colors">
+                                    <span className="text-xs font-semibold text-secondary-600 dark:text-white/80 uppercase tracking-tight">Locations</span>
                                     <input type="checkbox" checked={localPermissions.manageLocation} onChange={(e) => handlePermissionChange("manageLocation", e.target.checked)} className="w-4 h-4 rounded border-secondary-300 text-orange-600 focus:ring-orange-500" />
+                                  </label>
+                                  <label className="flex items-center justify-between cursor-pointer group hover:bg-orange-50/50 p-1 rounded transition-colors">
+                                    <span className="text-xs font-semibold text-secondary-600 dark:text-white/80 uppercase tracking-tight">Categories</span>
+                                    <input type="checkbox" checked={localPermissions.manageCategories} onChange={(e) => handlePermissionChange("manageCategories", e.target.checked)} className="w-4 h-4 rounded border-secondary-300 text-orange-600 focus:ring-orange-500" />
+                                  </label>
+                                  <label className="flex items-center justify-between cursor-pointer group hover:bg-orange-50/50 p-1 rounded transition-colors">
+                                    <span className="text-xs font-semibold text-secondary-600 dark:text-white/80 uppercase tracking-tight">Departments</span>
+                                    <input type="checkbox" checked={localPermissions.manageDepartment} onChange={(e) => handlePermissionChange("manageDepartment", e.target.checked)} className="w-4 h-4 rounded border-secondary-300 text-orange-600 focus:ring-orange-500" />
                                   </label>
                                 </div>
                               </CardContent>

@@ -243,7 +243,6 @@ namespace net_backend.Controllers
             permission.ViewAllComplaints = request.ViewAllComplaints;
             permission.AssignComplaints = request.AssignComplaints;
             permission.HandleComplaints = request.HandleComplaints;
-            permission.ManageCategories = request.ManageCategories;
             permission.ViewMaster = request.ViewMaster;
             permission.AddMaster = request.AddMaster;
             permission.EditMaster = request.EditMaster;
@@ -251,7 +250,10 @@ namespace net_backend.Controllers
             permission.ExportMaster = request.ExportMaster;
             permission.ManageCompany = request.ManageCompany;
             permission.ManageLocation = request.ManageLocation;
+            permission.ManageCategories = request.ManageCategories;
+            permission.ManageDepartment = request.ManageDepartment;
             permission.AccessSettings = request.AccessSettings;
+            permission.NavigationLayout = request.NavigationLayout;
             
             permission.UpdatedAt = DateTime.Now;
             await _context.SaveChangesAsync();

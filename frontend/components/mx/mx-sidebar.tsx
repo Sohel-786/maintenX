@@ -69,7 +69,7 @@ export function MxSidebar({
   }
   if (role === Role.USER && permissions?.raiseComplaint) {
     primaryItems.push({ 
-      label: "Raise ticket", 
+      label: "Raise new tickets", 
       icon: PlusCircle,
       onClick: () => window.dispatchEvent(new CustomEvent("openRaiseTicket"))
     });

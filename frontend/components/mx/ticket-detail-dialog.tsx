@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "react-hot-toast";
 import { formatDate, formatDateTime } from "@/lib/utils";
 import { AttachmentListDialog } from "@/components/ui/attachment-list-dialog";
-import { Building2, MapPin, Tags, Layers, User as UserIcon, Wrench, X, CalendarDays, Activity, CheckCircle2, AlertCircle } from "lucide-react";
+import { Building2, MapPin, Tags, Layers, User as UserIcon, Wrench, X, CalendarDays, Activity, CheckCircle2, Clock } from "lucide-react";
 import { CompletionAttachmentsDialog } from "./completion-attachments-dialog";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 
@@ -465,7 +465,7 @@ export function TicketDetailDialog({
                     const Icon = isStatusChange
                       ? t.toStatus === ComplaintStatus.Closed
                         ? CheckCircle2
-                        : AlertCircle
+                        : Clock
                       : Activity;
                     const iconColor =
                       t.toStatus === ComplaintStatus.Closed
