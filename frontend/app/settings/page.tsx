@@ -108,6 +108,7 @@ type UserForm = z.infer<typeof userSchema>;
 
 const permissionLabels: Record<string, string> = {
   viewDashboard: "Dashboard",
+  exportDashboard: "Export Dashboard",
   viewComplaints: "All tickets (Browsing Access)",
   raiseComplaint: "Raise new tickets",
   assignComplaints: "Assign work & Close tickets",
@@ -580,12 +581,12 @@ export default function SettingsPage() {
                     key={tab.id}
                     type="button"
                     onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center justify-center gap-2 px-3 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap flex-1 sm:flex-initial ${isActive
+                    className={`flex items-center justify-center gap-2 px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-lg text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap flex-none sm:flex-initial ${isActive
                       ? "bg-card text-primary-600 shadow-sm ring-1 ring-border"
                       : "text-muted-foreground hover:text-primary-600 hover:bg-card/60"
                       }`}
                   >
-                    <Icon className="w-4 h-4 shrink-0" />
+                    <Icon className="w-3.5 h-3.5 shrink-0" />
                     {tab.label}
                   </button>
                 );
@@ -826,6 +827,13 @@ export default function SettingsPage() {
                                     <p className="text-xs text-secondary-500 dark:text-white/70 mt-0.5">View dashboard statistics.</p>
                                   </div>
                                   <input type="checkbox" checked={localPermissions.viewDashboard} onChange={(e) => handlePermissionChange("viewDashboard", e.target.checked)} className="w-5 h-5 rounded border-secondary-300 text-primary-600 focus:ring-primary-500 cursor-pointer" />
+                                </label>
+                                <label className="flex items-center justify-between p-4 hover:bg-secondary-50/50 dark:hover:bg-secondary-900/25 cursor-pointer group">
+                                  <div>
+                                    <p className="text-sm font-medium text-primary-900 dark:text-white group-hover:text-primary-700 dark:group-hover:text-white transition-colors">Export Dashboard Reports</p>
+                                    <p className="text-xs text-secondary-500 dark:text-white/70 mt-0.5">Allow downloading Excel reports from dashboard.</p>
+                                  </div>
+                                  <input type="checkbox" checked={localPermissions.exportDashboard} onChange={(e) => handlePermissionChange("exportDashboard", e.target.checked)} className="w-5 h-5 rounded border-secondary-300 text-primary-600 focus:ring-primary-500 cursor-pointer" />
                                 </label>
                                 <label className="flex items-center justify-between p-4 hover:bg-secondary-50/50 dark:hover:bg-secondary-900/25 cursor-pointer group">
                                   <div>

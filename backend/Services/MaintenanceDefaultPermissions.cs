@@ -30,6 +30,7 @@ namespace net_backend.Services
             perm.ManageCategories = true;
             perm.ManageDepartment = true;
             perm.AccessSettings = true;
+            perm.ExportDashboard = true;
             perm.UpdatedAt = DateTime.Now;
         }
 

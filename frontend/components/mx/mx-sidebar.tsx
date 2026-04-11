@@ -105,17 +105,20 @@ export function MxSidebar({
   }
 
   const master: Item[] = [];
-  const showMaster =
-    !!permissions?.viewMaster && (permissions.manageCompany || permissions.manageLocation);
-  if (showMaster && permissions.manageCompany) {
-    master.push({ href: "/companies", label: "Companies", icon: Building2 });
-  }
-  if (showMaster && permissions.manageLocation) {
-    master.push({ href: "/locations", label: "Locations", icon: MapPin });
-  }
-  if (permissions?.manageCategories) {
-    master.push({ href: "/categories", label: "Categories", icon: Tags });
-    master.push({ href: "/departments", label: "Departments", icon: Layers });
+  const showMaster = !!permissions?.viewMaster;
+  if (showMaster) {
+    if (permissions.manageCompany) {
+      master.push({ href: "/companies", label: "Companies", icon: Building2 });
+    }
+    if (permissions.manageLocation) {
+      master.push({ href: "/locations", label: "Locations", icon: MapPin });
+    }
+    if (permissions?.manageCategories) {
+      master.push({ href: "/categories", label: "Categories", icon: Tags });
+    }
+    if (permissions?.manageDepartment) {
+      master.push({ href: "/departments", label: "Departments", icon: Layers });
+    }
   }
 
   const admin: Item[] = [];
@@ -216,19 +219,21 @@ export function MxSidebar({
             </div>
           </div>
           
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onExpandChange(!expanded);
-              }}
-              className="rounded-md border border-white/20 bg-white/10 p-2 text-white shadow-sm transition-all hover:bg-white/20 shrink-0"
-              title={expanded ? "Collapse sidebar" : "Expand sidebar"}
-            >
-              {expanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
-            </button>
-          </div>
+          {!isMobileDrawer && (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onExpandChange(!expanded);
+                }}
+                className="rounded-md border border-white/20 bg-white/10 p-2 text-white shadow-sm transition-all hover:bg-white/20 shrink-0"
+                title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+              >
+                {expanded ? <PanelLeftClose className="h-4 w-4" /> : <PanelLeftOpen className="h-4 w-4" />}
+              </button>
+            </div>
+          )}
         </div>
       </div>
 

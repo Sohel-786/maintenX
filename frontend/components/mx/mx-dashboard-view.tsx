@@ -348,17 +348,19 @@ export function MxDashboardView() {
                 <p className="text-xs text-secondary-500">{kpiContext}</p>
               </div>
               <div className="flex flex-wrap gap-2 w-full sm:w-auto">
-                <Button
-                  type="button"
-                  size="sm"
-                  className="gap-2 bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700 disabled:opacity-70 w-full sm:w-auto h-11 sm:h-9"
-                  disabled={exporting || rows.length === 0}
-                  loading={exporting}
-                  onClick={() => void onExport()}
-                >
-                  {!exporting && <Download className="h-4 w-4" />}
-                  {exporting ? "Exporting Excel…" : "Export Excel"}
-                </Button>
+                {permissions?.exportDashboard && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-2 bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700 disabled:opacity-70 w-full sm:w-auto h-11 sm:h-9"
+                    disabled={exporting || rows.length === 0}
+                    loading={exporting}
+                    onClick={() => void onExport()}
+                  >
+                    {!exporting && <Download className="h-4 w-4" />}
+                    {exporting ? "Exporting Excel…" : "Export Excel"}
+                  </Button>
+                )}
               </div>
             </div>
             <div className="flex flex-row flex-wrap items-end gap-3 lg:gap-4 p-4">

@@ -177,12 +177,14 @@ namespace net_backend.Controllers
 
             var u = request.Permissions;
             permissions.ViewDashboard = u.ViewDashboard;
+            permissions.ExportDashboard = u.ExportDashboard;
             permissions.ViewComplaints = u.ViewComplaints;
             permissions.RaiseComplaint = u.RaiseComplaint;
             permissions.ViewAllComplaints = u.ViewAllComplaints;
             permissions.AssignComplaints = u.AssignComplaints;
             permissions.HandleComplaints = u.HandleComplaints;
             permissions.ManageCategories = u.ManageCategories;
+            permissions.ManageDepartment = u.ManageDepartment;
             permissions.ViewMaster = u.ViewMaster;
             permissions.AddMaster = u.AddMaster;
             permissions.EditMaster = u.EditMaster;
@@ -260,12 +262,14 @@ namespace net_backend.Controllers
             return permissionKey switch
             {
                 "ViewDashboard" => permissions.ViewDashboard,
+                "ExportDashboard" => permissions.ExportDashboard,
                 "ViewComplaints" => permissions.ViewComplaints,
                 "RaiseComplaint" => permissions.RaiseComplaint,
                 "ViewAllComplaints" => permissions.ViewAllComplaints,
                 "AssignComplaints" => permissions.AssignComplaints,
                 "HandleComplaints" => permissions.HandleComplaints,
                 "ManageCategories" => permissions.ManageCategories,
+                "ManageDepartment" => permissions.ManageDepartment,
                 "ViewMaster" => permissions.ViewMaster,
                 "AddMaster" => permissions.AddMaster,
                 "EditMaster" => permissions.EditMaster,

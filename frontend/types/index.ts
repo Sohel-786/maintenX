@@ -67,6 +67,7 @@ export interface UserPermission {
   id: number;
   userId: number;
   viewDashboard: boolean;
+  exportDashboard: boolean;
   viewComplaints: boolean;
   raiseComplaint: boolean;
   viewAllComplaints: boolean;

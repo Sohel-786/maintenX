@@ -682,7 +682,7 @@ namespace net_backend.Controllers
             [FromQuery] string? assignmentBucket,
             [FromQuery] int? categoryId)
         {
-            if (!await HasPermission("ViewComplaints")) return Forbid();
+            if (!await HasPermission("ViewComplaints") || !await HasPermission("ExportDashboard")) return Forbid();
             var locationId = await GetCurrentLocationIdAsync();
             var me = await _context.Users.FirstOrDefaultAsync(u => u.Id == CurrentUserId);
             if (me == null) return Unauthorized();

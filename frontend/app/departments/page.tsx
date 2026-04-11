@@ -129,13 +129,13 @@ export default function DepartmentsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="mb-2 text-3xl font-bold tracking-tight text-secondary-900">Facility departments</h1>
           <p className="font-medium text-secondary-500">Departments for the currently selected location.</p>
         </div>
         {canAdd && (
-          <Button onClick={openAdd} className="bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700">
+          <Button onClick={openAdd} className="bg-primary-600 font-bold text-white shadow-md hover:bg-primary-700 sm:shrink-0">
             <Plus className="mr-2 h-4 w-4" />
             Add department
           </Button>

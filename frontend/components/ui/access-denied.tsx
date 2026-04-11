@@ -20,16 +20,16 @@ export function AccessDenied({ message = DEFAULT_MESSAGE, actionLabel, actionHre
 
   return (
     <div className="flex h-[80vh] min-h-[320px] items-center justify-center p-6 font-sans">
-      <div className="text-center max-w-md mx-auto bg-white p-8 rounded-2xl shadow-lg border border-red-100">
-        <div className="bg-red-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-          <ShieldAlert className="w-8 h-8 text-red-600" />
+      <div className="text-center max-w-md mx-auto bg-white dark:bg-slate-900/40 p-8 rounded-2xl shadow-lg border border-red-100 dark:border-red-900/30">
+        <div className="bg-red-50 dark:bg-red-900/20 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+          <ShieldAlert className="w-8 h-8 text-red-600 dark:text-red-400" />
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">Access Denied</h1>
-        <p className="text-gray-600 mb-6">{message}</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Access Denied</h1>
+        <p className="text-gray-600 dark:text-gray-300 mb-6">{message}</p>
         <Button
           onClick={() => router.push(actionHref)}
           variant="outline"
-          className="w-full border-gray-300 hover:bg-gray-50"
+          className="w-full border-gray-300 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-slate-800 dark:text-gray-200"
         >
           {actionLabel}
         </Button>

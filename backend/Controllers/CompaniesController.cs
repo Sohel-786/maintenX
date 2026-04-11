@@ -343,6 +343,7 @@ namespace net_backend.Controllers
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiResponse<CompanyDto>>> GetById(int id)
         {
+            if (!await HasAllPermissions("ViewMaster", "ManageCompany")) return Forbidden();
             var company = await _context.Companies.FindAsync(id);
             if (company == null) return NotFound(new ApiResponse<CompanyDto> { Success = false, Message = "Company not found" });
             var dto = new CompanyDto
@@ -637,7 +638,7 @@ namespace net_backend.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> Delete(int id)
         {
-            if (!await HasPermission("ManageCompany")) return Forbidden();
+            if (!await HasAllPermissions("ViewMaster", "ManageCompany")) return Forbidden();
 
             var company = await _context.Companies.FindAsync(id);
             if (company == null) return NotFound(new ApiResponse<bool> { Success = false, Message = "Company not found" });

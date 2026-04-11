@@ -144,12 +144,12 @@ export default function LocationsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-3xl font-bold text-secondary-900 tracking-tight mb-2">Location Master</h1>
           <p className="text-secondary-500 font-medium">Manage master data for storage locations</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 sm:shrink-0">
           {(canExport || canImport) && (
             <ExportImportButtons
               onExport={handleExport}

@@ -67,12 +67,8 @@ namespace net_backend.Data
                     adminUser.DefaultCompanyId = seedCompanyId;
                     adminUser.DefaultLocationId = seedLocationId;
                     adminUser.UpdatedAt = DateTime.Now;
+                    context.SaveChanges();
                 }
-                adminUser.Role = Role.ADMIN;
-                adminUser.Password = BCrypt.Net.BCrypt.HashPassword("6636");
-                adminUser.EncryptedPassword = AesHelper.Encrypt("6636", aesKey);
-                adminUser.UpdatedAt = DateTime.Now;
-                context.SaveChanges();
             }
 
             var adminPerm = context.UserPermissions.FirstOrDefault(p => p.UserId == adminUser.Id);
@@ -80,10 +76,6 @@ namespace net_backend.Data
             {
                 adminPerm = MaintenanceDefaultPermissions.ForAdmin(adminUser.Id);
                 context.UserPermissions.Add(adminPerm);
-            }
-            else
-            {
-                MaintenanceDefaultPermissions.ApplyAdmin(adminPerm);
             }
             context.SaveChanges();
 

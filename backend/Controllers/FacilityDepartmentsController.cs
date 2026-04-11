@@ -23,7 +23,14 @@ namespace net_backend.Controllers
             [FromQuery] int? page = null,
             [FromQuery] int pageSize = 25)
         {
-            if (!await HasPermission("ViewComplaints")) return Forbidden();
+            if (page.HasValue)
+            {
+                if (!await HasAllPermissions("ViewMaster", "ManageDepartment")) return Forbidden();
+            }
+            else
+            {
+                if (!await HasPermission("ViewComplaints")) return Forbidden();
+            }
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync(); // still used for writes / legacy FK
 
@@ -83,7 +90,7 @@ namespace net_backend.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Create([FromBody] CreateFacilityDepartmentRequest request)
         {
-            if (!await HasPermission("ManageDepartment")) return Forbidden();
+            if (!await CanCreateMaster("ManageDepartment")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync(); // stored for legacy FK, but dept is company-scoped
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -118,7 +125,7 @@ namespace net_backend.Controllers
         [HttpPatch("{id:int}")]
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Update(int id, [FromBody] UpdateFacilityDepartmentRequest request)
         {
-            if (!await HasPermission("ManageDepartment")) return Forbidden();
+            if (!await CanEditMaster("ManageDepartment")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
             var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);
@@ -159,7 +166,7 @@ namespace net_backend.Controllers
         [HttpPatch("{id:int}/toggle")]
         public async Task<ActionResult<ApiResponse<FacilityDepartmentDto>>> Toggle(int id)
         {
-            if (!await HasPermission("ManageDepartment")) return Forbidden();
+            if (!await CanEditMaster("ManageDepartment")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
             var d = await _context.FacilityDepartments.FirstOrDefaultAsync(x => x.Id == id && x.CompanyId == companyId);

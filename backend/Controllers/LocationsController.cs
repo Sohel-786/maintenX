@@ -332,7 +332,7 @@ namespace net_backend.Controllers
         [HttpDelete("{id}")]
         public async Task<ActionResult<ApiResponse<bool>>> Delete(int id)
         {
-            if (!await HasPermission("ManageLocation")) return Forbidden();
+            if (!await HasAllPermissions("ViewMaster", "ManageLocation")) return Forbidden();
 
             var location = await _context.Locations.FindAsync(id);
             if (location == null) return NotFound(new ApiResponse<bool> { Success = false, Message = "Location not found" });

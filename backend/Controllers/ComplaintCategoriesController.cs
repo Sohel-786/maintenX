@@ -27,7 +27,14 @@ namespace net_backend.Controllers
             [FromQuery] int? page = null,
             [FromQuery] int pageSize = 25)
         {
-            if (!await HasPermission("ViewComplaints")) return Forbidden();
+            if (page.HasValue)
+            {
+                if (!await HasAllPermissions("ViewMaster", "ManageCategories")) return Forbidden();
+            }
+            else
+            {
+                if (!await HasPermission("ViewComplaints")) return Forbidden();
+            }
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync(); // still used for writes / legacy FK
 
@@ -87,7 +94,7 @@ namespace net_backend.Controllers
         [HttpPost]
         public async Task<ActionResult<ApiResponse<ComplaintCategoryDto>>> Create([FromBody] CreateComplaintCategoryRequest request)
         {
-            if (!await HasPermission("ManageCategories")) return Forbidden();
+            if (!await CanCreateMaster("ManageCategories")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync(); // stored for legacy FK, but category is company-scoped
             if (string.IsNullOrWhiteSpace(request.Name))
@@ -123,7 +130,7 @@ namespace net_backend.Controllers
         [HttpPatch("{id:int}")]
         public async Task<ActionResult<ApiResponse<ComplaintCategoryDto>>> Update(int id, [FromBody] CreateComplaintCategoryRequest request)
         {
-            if (!await HasPermission("ManageCategories")) return Forbidden();
+            if (!await CanEditMaster("ManageCategories")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
             var cat = await _context.ComplaintCategories.FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);
@@ -171,7 +178,7 @@ namespace net_backend.Controllers
         [HttpPatch("{id:int}/toggle")]
         public async Task<ActionResult<ApiResponse<ComplaintCategoryDto>>> ToggleActive(int id)
         {
-            if (!await HasPermission("ManageCategories")) return Forbidden();
+            if (!await CanEditMaster("ManageCategories")) return Forbidden();
             var companyId = await GetCurrentCompanyIdAsync();
             var locationId = await GetCurrentLocationIdAsync();
             var cat = await _context.ComplaintCategories.FirstOrDefaultAsync(c => c.Id == id && c.CompanyId == companyId);

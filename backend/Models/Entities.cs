@@ -247,6 +247,7 @@ namespace net_backend.Models
         public int UserId { get; set; }
 
         public bool ViewDashboard { get; set; } = true;
+        public bool ExportDashboard { get; set; } = false;
 
         public bool ViewComplaints { get; set; } = true;
         public bool RaiseComplaint { get; set; } = true;
